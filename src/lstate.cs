@@ -49,8 +49,8 @@ namespace cclua53
             public static void init_registry (cclua.lua_State L, global_State g) {
                 /* create registry */
                 Table registry = luaH_new (L);
-                def.sethvalue (L, g.l_registry, registry);
-                module.luaH_resize (L, registry, cclua.LUA_RIDX_LAST, 0);
+                sethvalue (L, g.l_registry, registry);
+                luaH_resize (L, registry, cclua.LUA_RIDX_LAST, 0);
                 /* registry[LUA_RIDX_MAINTHREAD] = L */
                 TValue temp = new TValue ();
                 def.sethvalue (L, temp, L);
@@ -216,6 +216,11 @@ namespace cclua53
 
         public static void close_state (cclua.lua_State L) {
         }
+
+		/* macro to convert a Lua object into a GCObject */
+		public static GCObject obj2gco (GCObject x) {
+			return x;
+		}
     }
 
 

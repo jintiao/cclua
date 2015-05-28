@@ -11,6 +11,23 @@ namespace cclua53 {
             }
         }
 
+		/*
+		** tags for Tagged Values have the following use of bits:
+		** bits 0-3: actual tag (a LUA_T* value)
+		** bits 4-5: variant bits
+		** bit 6: whether value is collectable
+		*/
+
+		public const int VARBITS = 3 << 4;
+
+		/* Variant tags for strings */
+		public const LUA_TSHRSTR = cclua.LUA_TSTRING | (0 << 4);  /* short strings */
+		public const LUA_TLNGSTR = cclua.LUA_TSTRING | (1 << 4);  /* long strings */
+
+		/* Variant tags for numbers */
+		public const LUA_TNUMFLT = cclua.LUA_TNUMBER | (0 << 4);  /* float numbers */
+		public const LUA_TNUMINT = cclua.LUA_TNUMBER | (1 << 4);  /* integer numbers */
+
         /* Bit mark for collectable types */
         public const byte BIT_ISCOLLECTABLE = 1 << 6;
 
@@ -24,9 +41,25 @@ namespace cclua53 {
         }
 
         public static void sethvalue (cclua.lua_State L, TValue obj, GCObject x) {
-            obj.value_.o = x;
+			obj.value_.o = obj2gco (x);
             obj.tt_ = ctb (cclua.LUA_TTABLE);
         }
+
+		public static void setobj (cclua.lua_State L, TValue obj1, TValue obj2) {
+			obj1.copy (obj2);
+		}
+
+		/*
+		** different types of assignments, according to destination
+		*/
+		
+		/* from stack to (same) stack */
+
+		public static void setobjs2s (cclua.lua_State L, TValue obj1, TValue obj2) {
+			setobj (L, obj1, obj2);
+		}
+
+		/* to stack (not from same stack) */
 
 
         /*
@@ -37,9 +70,15 @@ namespace cclua53 {
             public lobject.Value value_;
             public int tt_;
 
-            public TValue () {
+			public TValue () {
+				lobject.Value = new lobject.Value ();
                 tt_ = cclua.LUA_TNIL;
             }
+
+			public void copy (TValue obj) {
+				value_.o = obj.value_.o;
+				tt_ = obj.tt_;
+			}
         }
 
         /*
@@ -97,18 +136,6 @@ namespace cclua53 {
             public Node () {
                 i_val = new TValue ();
                 i_key = new TKey ();
-            }
-
-            public void setnext (int n) {
-                i_key.nk.next = n;
-            }
-
-            public TValue wgkey () {
-                return i_key.nk.tv;
-            }
-
-            public TValue gval () {
-                return i_val;
             }
         }
 

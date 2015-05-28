@@ -10,5 +10,13 @@ namespace cclua53
         ** CHANGE it if you need a different size.
         */
         public const int LUA_EXTRASPACE = sizeof (long);
+
+		/*
+		@@ LUAI_MAXSHORTLEN is the maximum length for short strings, that is,
+		** strings that are internalized. (Cannot be smaller than reserved words
+		** or tags for metamethods, as these strings must be internalized;
+		** #("function") = 8, #("__newindex") = 10.)
+		*/
+		public const int LUAI_MAXSHORTLEN = 40;
     }
 }
