@@ -6,9 +6,6 @@ namespace cclua53
 
 		private static class ldo {
 			
-			/* type of protected functions, to be ran by 'runprotected' */
-			public delegate void Pfunc (cclua.lua_State L, object ud);
-			
 			public class LuaException : Exception {
 				public lua_longjmp lj;
 				public LuaException (lua_longjmp jmp) {
@@ -16,16 +13,16 @@ namespace cclua53
 				}
 			}
 
-			public void LUAI_TRY (cclua.lua_State L, ldo.Pfunc f, object ud, lua_longjmp lj) {
+			public static void LUAI_TRY (cclua.lua_State L, Pfunc f, object ud, lua_longjmp lj) {
 				try {
 					f (L, ud);
 				}
-				catch (Exception e) {
+				catch (Exception) {
 					if (lj.status == 0) lj.status = -1;
 				}
 			}
 
-			public void LUAI_THROW (cclua.lua_State L, lua_longjmp lj) {
+            public static void LUAI_THROW (cclua.lua_State L, lua_longjmp lj) {
 				throw (new LuaException (lj));
 			}
 
@@ -83,7 +80,10 @@ namespace cclua53
 			}
 		}
 
-		public static int luaD_rawrunprotected (cclua.lua_State L, ldo.Pfunc f, object ud) {
+        /* type of protected functions, to be ran by 'runprotected' */
+        public delegate void Pfunc (cclua.lua_State L, object ud);
+
+		public static int luaD_rawrunprotected (cclua.lua_State L, Pfunc f, object ud) {
             ushort oldCcalls = L.nCcalls;
             lua_longjmp lj = new lua_longjmp ();
             lj.status = cclua.LUA_OK;

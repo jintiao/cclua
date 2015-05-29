@@ -108,8 +108,8 @@ namespace cclua53
 
         public class stringtable {
             public TString[] hash;
-            public int nuse;  /* number of elements */
-            public int size;
+            public long nuse;  /* number of elements */
+            public long size;
         }
 
         /*

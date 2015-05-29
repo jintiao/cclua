@@ -12,43 +12,50 @@ namespace cclua53
             return new T ();
         }
 
-        public static T[] luaM_newvector<T> (cclua.lua_State L, int n) where T : new () {
+        public static T[] luaM_emptyvector<T> (cclua.lua_State L, long n) {
+            if (n <= 0)
+                return null;
+            return new T[n];
+        }
+
+        public static T[] luaM_fullvector<T> (cclua.lua_State L, long n) where T : new () {
+            if (n <= 0)
+                return null;
             T[] block = new T[n];
-            for (int i = 0; i < n; i++)
+            for (long i = 0; i < n; i++)
                 block[i] = new T ();
             return block;
         }
 
-		public static T[] luaM_reallocv<T> (cclua.lua_State L, T[] block, uint osize, uint nsize) where T : new () {
-			if (nsize == 0)
+        public static T[] luaM_reallocv<T> (cclua.lua_State L, T[] block, long osize, long nsize) where T : new () {
+			if (osize < 0 || nsize <= 0)  /* nsize==0 means free */
 				return null;
 
-			uint realosize = (block != null) ? osize : 0;
+            long realosize = (block != null) ? osize : 0;
 			lua_assert ((realosize == 0) == (block == null));
-			T[] newblock = luaM_newvector<T> (L, nsize);
+            T[] newblock = luaM_emptyvector<T> (L, nsize);
 			if (newblock == null && nsize > 0) {
 				api_check (nsize > realosize, "realloc cannot fail when shrinking a block");
 				luaD_throw (L, cclua.LUA_ERRMEM);
 			}
-			lua_assert ((nsize == 0) == (newblock == null));	
-			if (nsize < osize) {
-				for (uint i = 0; i < nsize; i++) {
-					// TODO : object value copy
-				}
-			}
-			else {
-				for (uint i = 0; i < osize; i++) {
-					// TODO : object value copy
-				}
-				for (uint i = osize; i < nsize; i++) {
-					// TODO : set nil value
-				}
-			}
+			lua_assert ((nsize == 0) == (newblock == null));
+            long minsize = Math.Min (osize, nsize);
+            for (long i = 0; i < minsize; i++) {
+                newblock[i] = block[i];
+            }
 			return newblock;
 		}
 
-		public static void luaM_reallocvector<T> (cclua.lua_State L, ref T[] block, uint osize, uint nsize) where T : new () {
+        public static void luaM_reallocvector<T> (cclua.lua_State L, ref T[] block, long osize, long nsize) where T : new () {
 			block = luaM_reallocv<T> (L, block, osize, nsize);
 		}
+
+        public static void luaM_freearray (cclua.lua_State L, object block) {
+            /* do nothing */
+        }
+
+        public static void luaM_free (cclua.lua_State L, object block) {
+            /* do nothing */
+        }
     }
 }

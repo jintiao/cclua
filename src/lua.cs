@@ -64,7 +64,7 @@ namespace cclua53
             public sbyte istailcall;  /* (t) */
             public sbyte[] short_src;  /* (S) */
             /* private part */
-            public CallInfo i_ci;  /* active function */
+            public imp.CallInfo i_ci;  /* active function */
         };
 
         public static string lua_tostring (lua_State L, int idx) {
