@@ -1,7 +1,7 @@
 ﻿using System;
 
-namespace cclua53
-{
+namespace cclua {
+
     public static partial class imp {
 
         /*
@@ -24,10 +24,10 @@ namespace cclua53
 
 
         /* these are quite standard operations */
-        public static double luai_numadd (cclua.lua_State L, double a, double b) { return (a + b); }
-        public static double luai_numsub (cclua.lua_State L, double a, double b) { return (a - b); }
-        public static double luai_nummul (cclua.lua_State L, double a, double b) { return (a * b); }
-        public static double luai_numdiv (cclua.lua_State L, double a, double b) { return (a / b); }
+        public static double luai_numadd (lua530.lua_State L, double a, double b) { return (a + b); }
+        public static double luai_numsub (lua530.lua_State L, double a, double b) { return (a - b); }
+        public static double luai_nummul (lua530.lua_State L, double a, double b) { return (a * b); }
+        public static double luai_numdiv (lua530.lua_State L, double a, double b) { return (a / b); }
         public static double luai_numunm (double a) { return (-a); }
         public static int luai_numeq (double a, double b) { return ((a == b) ? 1 : 0); }
         public static int luai_numlt (double a, double b) { return ((a < b) ? 1 : 0); }
@@ -40,7 +40,7 @@ namespace cclua53
     }
 
 
-    public static partial class cclua {
+    public static partial class lua530 {
 
         /*
         @@ lua_numbertointeger converts a float number to an integer, or

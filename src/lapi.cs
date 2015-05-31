@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace cclua53 {
+namespace cclua {
 
-    public static partial class cclua {
+    public static partial class lua530 {
 
         public static lua_CFunction lua_atpanic (lua_State L, lua_CFunction panicf) {
             imp.lua_lock (L);
@@ -12,6 +12,9 @@ namespace cclua53 {
             return old;
         }
 
-
+		public static long lua_version (lua_State L) {
+			if (L == null) return LUA_VERSION_NUM;
+			else return imp.G (L).version;
+		}
     }
 }

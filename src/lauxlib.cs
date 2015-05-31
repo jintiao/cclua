@@ -1,9 +1,8 @@
 ﻿using System;
 
-namespace cclua53
-{
+namespace cclua {
 
-    public static partial class cclua {
+    public static partial class lua530 {
 
         private static class lauxlib {
 

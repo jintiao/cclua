@@ -1,5 +1,5 @@
 ﻿using System;
 
-namespace cclua53
-{
+namespace cclua {
+
 }

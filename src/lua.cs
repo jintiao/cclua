@@ -1,8 +1,10 @@
 ﻿using System;
 
-namespace cclua53
-{
-    public static partial class cclua {
+namespace cclua {
+
+    public static partial class lua530 {
+
+		public static long LUA_VERSION_NUM = 503;
 
         /* thread status */
         public const int LUA_OK = 0;

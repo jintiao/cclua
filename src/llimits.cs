@@ -1,7 +1,9 @@
 ﻿using System;
 
-namespace cclua53
-{
+using lua_State = cclua.lua530.lua_State;
+
+namespace cclua {
+
     public static partial class imp {
 
         public const int DBL_MAX_EXP = 1024;
@@ -25,10 +27,10 @@ namespace cclua53
         /* minimum size for the string table (must be power of 2) */
         public const int MINSTRTABSIZE = 64;  /* minimum size for "predefined" strings */
 
-        public static void lua_lock (cclua.lua_State L) {
+        public static void lua_lock (lua_State L) {
         }
 
-        public static void lua_unlock (cclua.lua_State L) {
+        public static void lua_unlock (lua_State L) {
         }
 
         public static void api_check (bool e, object msg) {
@@ -38,10 +40,22 @@ namespace cclua53
         }
 
 		public static T check_exp<T> (bool c, object e) {
+			lua_assert (c);
 			return (T)e;
+		}
+
+		public static void lua_longassert (bool c) {
+			if (c == false)
+				lua_assert (0);
 		}
 
         public static void lua_writestringerror (string fmt, params object[] args) {
         }
+
+		public static void luai_userstateopen (lua_State L) {
+		}
+
+		public static void luai_userstateclose (lua_State L) {
+		}
     }
 }

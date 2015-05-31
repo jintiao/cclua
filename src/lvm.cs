@@ -1,7 +1,7 @@
 ﻿using System;
 
-namespace cclua53
-{
+namespace cclua {
+
     public static partial class imp {
 
         private static class lvm {
@@ -29,9 +29,9 @@ namespace cclua53
         ** L == NULL means raw equality (no metamethods)
         */
 
-        public static int luaV_equalobj (cclua.lua_State L, TValue t1, TValue t2) {
+        public static int luaV_equalobj (lua530.lua_State L, TValue t1, TValue t2) {
             if (ttype (t1) != ttype (t2)) {  /* not the same variant? */
-                if (ttnov (t1) != ttnov (t2) || ttnov (t1) != cclua.LUA_TNUMBER)
+                if (ttnov (t1) != ttnov (t2) || ttnov (t1) != lua530.LUA_TNUMBER)
                     return 0;  /* only numbers can be equal with different variants */
                 else {  /* two numbers with different variants */
                     lua_assert (ttisnumber (t1) && ttisnumber (t2));
@@ -44,7 +44,7 @@ namespace cclua53
             }
             /* values have same type and same variant */
             switch (ttype (t1)) {
-                case cclua.LUA_TNIL: return 1;
+                case lua530.LUA_TNIL: return 1;
                 case LUA_TNUMINT: return ((ivalue (t1) == ivalue (t2)) ? 1 : 0);
                 default:
                     return ((gcvalue (t1) == gcvalue (t2)) ? 1 : 0);

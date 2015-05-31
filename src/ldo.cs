@@ -1,7 +1,7 @@
 ﻿using System;
 
-namespace cclua53
-{
+namespace cclua {
+
     public static partial class imp {
 
 		private static class ldo {
@@ -13,7 +13,7 @@ namespace cclua53
 				}
 			}
 
-			public static void LUAI_TRY (cclua.lua_State L, Pfunc f, object ud, lua_longjmp lj) {
+			public static void LUAI_TRY (lua530.lua_State L, Pfunc f, object ud, lua_longjmp lj) {
 				try {
 					f (L, ud);
 				}
@@ -22,7 +22,7 @@ namespace cclua53
 				}
 			}
 
-            public static void LUAI_THROW (cclua.lua_State L, lua_longjmp lj) {
+            public static void LUAI_THROW (lua530.lua_State L, lua_longjmp lj) {
 				throw (new LuaException (lj));
 			}
 
@@ -30,13 +30,13 @@ namespace cclua53
 				// TODO
 			}
 
-			public static void seterrorobj (cclua.lua_State L, int errcode, int oldtop) {
+			public static void seterrorobj (lua530.lua_State L, int errcode, int oldtop) {
 				switch (errcode) {
-				case cclua.LUA_ERRMEM: {  /* memory error? */
+				case lua530.LUA_ERRMEM: {  /* memory error? */
 					setsvalue2s (L, oldtop, G (L).memerrmsg);  /* reuse preregistered msg. */
 					break;					         
 				}
-				case cclua.LUA_ERRERR: {
+				case lua530.LUA_ERRERR: {
 					setsvalue2s (L, oldtop, luaS_newliteral (L, "error in error handling"));
 					break;
 				}
@@ -49,13 +49,7 @@ namespace cclua53
 			}
 		}
 
-        /* chain list of long jump buffers */
-        public class lua_longjmp {
-            public lua_longjmp previous;
-            public volatile int status;  /* error code */
-        }
-
-		public static void luaD_throw (cclua.lua_State L, int errcode) {
+		public static void luaD_throw (lua530.lua_State L, int errcode) {
 			if (L.errorJmp != null) {  /* thread has an error handler? */
 				L.errorJmp.status = errcode;
 				LUAI_THROW (L, L.errorJmp);
@@ -81,12 +75,12 @@ namespace cclua53
 		}
 
         /* type of protected functions, to be ran by 'runprotected' */
-        public delegate void Pfunc (cclua.lua_State L, object ud);
+        public delegate void Pfunc (lua530.lua_State L, object ud);
 
-		public static int luaD_rawrunprotected (cclua.lua_State L, Pfunc f, object ud) {
+		public static int luaD_rawrunprotected (lua530.lua_State L, Pfunc f, object ud) {
             ushort oldCcalls = L.nCcalls;
-            lua_longjmp lj = new lua_longjmp ();
-            lj.status = cclua.LUA_OK;
+			lua_longjmp lj = luaM_newobject<lua_longjmp> ();
+            lj.status = lua530.LUA_OK;
             lj.previous = L.errorJmp;  /* chain new error handler */
             L.errorJmp = lj;
 			LUAI_TRY (L, f, ud, lj);
@@ -95,4 +89,13 @@ namespace cclua53
             return lj.status;
         }
     }
+
+	public static partial class lua530 {
+
+		/* chain list of long jump buffers */
+		public class lua_longjmp {
+			public lua_longjmp previous;
+			public volatile int status;  /* error code */
+		}
+	}
 }

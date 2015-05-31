@@ -1,6 +1,9 @@
 ﻿using System;
 
-namespace cclua53 {
+using lua_State = cclua.lua530.lua_State;
+
+namespace cclua {
+
     public static partial class imp {
 
         public class MBuffer {
@@ -9,9 +12,13 @@ namespace cclua53 {
             public ulong buffsize;
         }
 
-        public static void luaZ_initbuffer (cclua.lua_State L, MBuffer buff) {
+        public static void luaZ_initbuffer (lua_State L, MBuffer buff) {
             buff.buffer = null;
             buff.buffsize = 0;
         }
+
+
+		public static void luaZ_freebuffer (lua_State L, MBuffer buff) {
+		}
     }
 }
