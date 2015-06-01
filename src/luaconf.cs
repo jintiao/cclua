@@ -4,6 +4,20 @@ namespace cclua {
 
     public static partial class imp {
 
+
+        /*
+        @@ LUAI_MAXSTACK limits the size of the Lua stack.
+        ** CHANGE it if you need a different limit. This limit is arbitrary;
+        ** its only purpose is to stop Lua from consuming unlimited stack
+        ** space (and to reserve some numbers for pseudo-indices).
+        */
+        public const int LUAI_MAXSTACK = 15000;
+
+
+        /* reserve some space for error handling */
+        public const int LUAI_FIRSTPSEUDOIDX = -LUAI_MAXSTACK - 1000;
+
+
         /*
         @@ LUA_EXTRASPACE defines the size of a raw memory area associated with
         ** a Lua state with very fast access.

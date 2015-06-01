@@ -96,11 +96,16 @@ namespace cclua {
 
 
 
+        public static void luaC_barrier (lua_State L, GCObject p, TValue v) {
+        }
 
 		public static void luaC_barrierback (lua_State L, Table p, TValue v) {
 			//if (iscollectable (p) && isblack (p) && iswhite (gcvalue (v)))
 			//	luaC_barrierback_ (L, p);
 		}
+
+        public static void luaC_upvalbarrier (lua_State L, UpVal uv) {
+        }
 
 
 

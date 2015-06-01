@@ -6,6 +6,14 @@ namespace cclua {
 
 		public static long LUA_VERSION_NUM = 503;
 
+
+        /*
+        ** pseudo-indices
+        */
+        public const int LUA_REGISTRYINDEX = imp.LUAI_FIRSTPSEUDOIDX;
+        public static int lua_upvalueindex (int i) { return (LUA_REGISTRYINDEX - i); }
+
+
         /* thread status */
         public const int LUA_OK = 0;
         public const int LUA_YIELD = 1;

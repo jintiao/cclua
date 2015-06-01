@@ -24,11 +24,34 @@ namespace cclua {
             }
         }
 
+
+        public static bool cvt2str (TValue o) { return false; }  /* no conversion from numbers to strings */
+
+
+        public static int tonumber (TValue o, ref double n) {
+            if (ttisfloat (o)) {
+                n = fltvalue (o);
+                return 1;
+            }
+            else {
+                return luaV_tonumber_ (o, ref n);
+            }
+        }
+
+
+        /*
+        ** Try to convert a value to a float. The float case is already handled
+        ** by the macro 'tonumber'.
+        */
+        public static int luaV_tonumber_ (TValue o, ref double n) {
+            return 0;
+        }
+
+
         /*
         ** Main operation for equality of Lua values; return 't1 == t2'. 
         ** L == NULL means raw equality (no metamethods)
         */
-
         public static int luaV_equalobj (lua530.lua_State L, TValue t1, TValue t2) {
             if (ttype (t1) != ttype (t2)) {  /* not the same variant? */
                 if (ttnov (t1) != ttnov (t2) || ttnov (t1) != lua530.LUA_TNUMBER)

@@ -1,12 +1,17 @@
 ﻿using System;
 
+using lua_State = cclua.lua530.lua_State;
 using lua_longjmp = cclua.lua530.lua_longjmp;
 
 namespace cclua {
 
     public static partial class imp {
 
-		private static class ldo {
+        private static class ldo {
+
+            /* some space for error handling */
+            public const int ERRORSTACKSIZE = LUAI_MAXSTACK + 200;
+
 			
 			public class LuaException : Exception {
 				public lua_longjmp lj;
@@ -15,7 +20,7 @@ namespace cclua {
 				}
 			}
 
-			public static void LUAI_TRY (lua530.lua_State L, Pfunc f, object ud, lua_longjmp lj) {
+			public static void LUAI_TRY (lua_State L, Pfunc f, object ud, lua_longjmp lj) {
 				try {
 					f (L, ud);
 				}
@@ -24,7 +29,7 @@ namespace cclua {
 				}
 			}
 
-            public static void LUAI_THROW (lua530.lua_State L, lua_longjmp lj) {
+            public static void LUAI_THROW (lua_State L, lua_longjmp lj) {
 				throw (new LuaException (lj));
 			}
 
@@ -32,7 +37,7 @@ namespace cclua {
 				// TODO
 			}
 
-			public static void seterrorobj (lua530.lua_State L, int errcode, int oldtop) {
+			public static void seterrorobj (lua_State L, int errcode, int oldtop) {
 				switch (errcode) {
 				case lua530.LUA_ERRMEM: {  /* memory error? */
 					setsvalue2s (L, L.stack[oldtop], G (L).memerrmsg);  /* reuse preregistered msg. */
@@ -49,9 +54,16 @@ namespace cclua {
 				}
 				L.top = oldtop + 1;
 			}
+
+
+            public static void correctstack (lua_State L, TValue[] oldstack) {
+                // TODO
+            }
+
+
 		}
 
-		public static void luaD_throw (lua530.lua_State L, int errcode) {
+		public static void luaD_throw (lua_State L, int errcode) {
 			if (L.errorJmp != null) {  /* thread has an error handler? */
 				L.errorJmp.status = errcode;
 				ldo.LUAI_THROW (L, L.errorJmp);
@@ -77,9 +89,9 @@ namespace cclua {
 		}
 
         /* type of protected functions, to be ran by 'runprotected' */
-        public delegate void Pfunc (lua530.lua_State L, object ud);
+        public delegate void Pfunc (lua_State L, object ud);
 
-		public static int luaD_rawrunprotected (lua530.lua_State L, Pfunc f, object ud) {
+		public static int luaD_rawrunprotected (lua_State L, Pfunc f, object ud) {
             ushort oldCcalls = L.nCcalls;
 			lua_longjmp lj = luaM_newobject<lua_longjmp> (L);
             lj.status = lua530.LUA_OK;
@@ -89,6 +101,40 @@ namespace cclua {
             L.errorJmp = lj.previous;  /* restore old error handler */
             L.nCcalls = oldCcalls;
             return lj.status;
+        }
+
+
+
+        public static void luaD_reallocstack (lua_State L, int newsize) {
+            TValue[] oldstack = L.stack;
+            int lim = L.stacksize;
+            lua_assert (newsize <= LUAI_MAXSTACK || newsize == ldo.ERRORSTACKSIZE);
+            lua_assert (L.stack_last == L.stacksize - EXTRA_STACK);
+            luaM_reallocvector (L, ref L.stack, L.stacksize, newsize);
+            for (; lim < newsize; lim++)
+                setnilvalue (L.stack[lim]);  /* erase new segment */
+            L.stacksize = newsize;
+            L.stack_last = newsize - EXTRA_STACK;
+            ldo.correctstack (L, oldstack);
+        }
+
+
+        public static void luaD_growstack (lua_State L, int n) {
+            int size = L.stacksize;
+            if (size > LUAI_MAXSTACK)  /* error after extra size? */
+                luaD_throw (L, lua530.LUA_ERRERR);
+            else {
+                int needed = L.top + n + EXTRA_STACK;
+                int newsize = 2 * size;
+                if (newsize > LUAI_MAXSTACK) newsize = LUAI_MAXSTACK;
+                if (newsize < needed) newsize = needed;
+                if (newsize > LUAI_MAXSTACK) {  /* stack overflow? */
+                    luaD_reallocstack (L, ldo.ERRORSTACKSIZE);
+                    luaG_runerror (L, "stack overflow");
+                }
+                else
+                    luaD_reallocstack (L, newsize);
+            }
         }
     }
 

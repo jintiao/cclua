@@ -26,10 +26,8 @@ namespace cclua {
 	*/
 
     public static partial class imp {
-        private static class lstate {
 
-            /* extra stack space to handle TM calls and some other extras */
-            public const int EXTRA_STACK = 5;
+        private static class lstate {
 
             public const int BASIC_STACK_SIZE = 2 * lua530.LUA_MINSTACK;			
 
@@ -97,6 +95,8 @@ namespace cclua {
         }
 
 
+        /* extra stack space to handle TM calls and some other extras */
+        public const int EXTRA_STACK = 5;
 		
 		
 		public const int LUAI_GCPAUSE = 200;  /* 200% */

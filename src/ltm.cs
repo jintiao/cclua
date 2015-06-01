@@ -5,6 +5,16 @@ namespace cclua {
 	public static partial class imp {
 		private static class ltm {
 
+            public static string udatatypename = "userdata";
+
+            public static string[] luaT_typenames_ = {
+              "no value",
+              "nil", "boolean", udatatypename, "number",
+              "string", "table", "function", udatatypename, "thread",
+              "proto" /* this last case is used for tests only */
+            };
+
+
 			public static string[] luaT_eventname = {  /* ORDER TM */
 				"__index", "__newindex",
 				"__gc", "__mode", "__len", "__eq",
@@ -15,6 +25,7 @@ namespace cclua {
 				"__concat", "__call"
 			};
 		}
+
 
 
 		/*
@@ -46,6 +57,10 @@ namespace cclua {
 		public const int TM_CONCAT = 22;
 		public const int TM_CALL = 23;
 		public const int TM_N = 24;  /* number of elements in the enum */
+
+
+
+        public static string ttypename (int x) { return ltm.luaT_typenames_[x + 1]; }
 
 
 		public static void luaT_init (lua530.lua_State L) {

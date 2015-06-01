@@ -24,8 +24,18 @@ namespace cclua {
         */
         public static int point2int (object p) { return p.GetHashCode (); }
 
+
+        /*
+        ** maximum number of upvalues in a closure (both C and Lua). (Value
+        ** must fit in an unsigned char.)
+        */
+        public const int MAXUPVAL = Byte.MaxValue;
+
+
         /* minimum size for the string table (must be power of 2) */
         public const int MINSTRTABSIZE = 64;  /* minimum size for "predefined" strings */
+
+
 
         public static void lua_lock (lua_State L) {
         }

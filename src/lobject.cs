@@ -385,12 +385,12 @@ namespace cclua {
 
 		public class CClosure : ClosureHeader {
             public lua530.lua_CFunction f;
-            public TValue upvalue;  /* list of upvalues */
+            public TValue[] upvalue;  /* list of upvalues */
 		}
 
 		public class LClosure : ClosureHeader {
             public Proto p;
-            public TValue upvalue;  /* list of upvalues */
+            public UpVal[] upvalue;  /* list of upvalues */
 		}
 
 		public class Closure {
