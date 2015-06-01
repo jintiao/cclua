@@ -53,7 +53,7 @@ namespace cclua {
             }
 
             public static void stack_init (lua_State L1, lua_State L) {
-                L1.stack = luaM_newvector<TValue> (L, BASIC_STACK_SIZE);
+                L1.stack = luaM_fullvector<TValue> (L, BASIC_STACK_SIZE);
                 L1.stacksize = BASIC_STACK_SIZE;
                 for (int i = 0; i < BASIC_STACK_SIZE; i++)
                     setnilvalue (L1.stack[i]);  /* erase new stack */
@@ -87,7 +87,7 @@ namespace cclua {
                 sethvalue (L, g.l_registry, registry);
                 luaH_resize (L, registry, lua530.LUA_RIDX_LAST, 0);
                 /* registry[LUA_RIDX_MAINTHREAD] = L */
-				TValue temp = luaM_newobject<TValue> ();
+				TValue temp = luaM_newobject<TValue> (L);
 				setthvalue (L, temp, L);  /* temp = L */
                 luaH_setint (L, registry, lua530.LUA_RIDX_MAINTHREAD, temp);
                 /* registry[LUA_RIDX_GLOBALS] = table of globals */
@@ -140,8 +140,8 @@ namespace cclua {
                 public cc c;  /* only for C functions */
 
                 public uc () {
-					l = luaM_newobject<lc> ();
-					c = luaM_newobject<cc> ();
+					l = luaM_newobject<lc> (null);
+					c = luaM_newobject<cc> (null);
                 }
             }
 
@@ -155,7 +155,7 @@ namespace cclua {
             public byte callstatus;
 
             public CallInfo () {
-				u = luaM_newobject<uc> ();
+				u = luaM_newobject<uc> (null);
             }
         }
 
@@ -174,7 +174,7 @@ namespace cclua {
 		public static bool isLua (CallInfo ci) { return ((ci.callstatus & CIST_LUA) != 0); }
 
 		/* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
-		public static int setoah (int st, int v) { st = ((st & (~CIST_OAH)) | v); }
+		public static void setoah (ref int st, int v) { st = ((st & (~CIST_OAH)) | v); }
 		public static int getoah (int st) { return (st & CIST_OAH); }
 
 
@@ -210,17 +210,17 @@ namespace cclua {
 			public int gcstepmul;  /* GC 'granularity' */
             public lua530.lua_CFunction panic;  /* to be called in unprotected errors */
             public lua_State mainthread;
-            public double version;  /* pointer to version number */
+            public long version;  /* pointer to version number */
             public TString memerrmsg;  /* memory-error message */
             public TString[] tmname;  /* array with tag-method names */
             public Table[] mt;  /* metatables for basic types */
 
             public global_State () {
-				strt = luaM_newobject<stringtable> ();
-				l_registry = luaM_newobject<TValue> ();
-				buff = luaM_newobject<MBuffer> ();
-				tmname = luaM_emptyvector<TString> (L, TM_N);
-				mt = luaM_emptyvector<Table> (L, lua530.LUA_NUMTAGS);
+				strt = luaM_newobject<stringtable> (null);
+                l_registry = luaM_newobject<TValue> (null);
+                buff = luaM_newobject<MBuffer> (null);
+                tmname = luaM_emptyvector<TString> (null, TM_N);
+                mt = luaM_emptyvector<Table> (null, lua530.LUA_NUMTAGS);
             }
         }
 
@@ -232,8 +232,8 @@ namespace cclua {
             public lua_State l;
 
             public LX () {
-				extra_ = luaM_emptyvector<byte> (L, LUA_EXTRASPACE);
-				l = luaM_newobject<lua_State> ();
+                extra_ = luaM_emptyvector<byte> (null, LUA_EXTRASPACE);
+                l = luaM_newobject<lua_State> (null);
             }
         }
 
@@ -245,9 +245,9 @@ namespace cclua {
             public global_State g;
 
             public LG () {
-				l = luaM_newobject<LX> ();
-				l.lg = this;
-				g = luaM_newobject<global_State> ();
+                l = luaM_newobject<LX> (null);
+				l.l.lg = this;
+                g = luaM_newobject<global_State> (null);
             }
         }
 
@@ -287,7 +287,7 @@ namespace cclua {
 
 
 		public static CallInfo luaE_extendCI (lua_State L) {
-			CallInfo ci = luaM_new<CallInfo> (L);
+            CallInfo ci = luaM_newobject<CallInfo> (L);
 			lua_assert (L.ci.next == null);
 			L.ci.next = ci;
 			ci.previous = L.ci;
@@ -307,7 +307,7 @@ namespace cclua {
 				ci = next;
 				if (ci == null) break;
 				next = ci.next;
-				luaM_free (ci);
+				luaM_free (L, ci);
 			}
 		}
 
@@ -341,7 +341,7 @@ namespace cclua {
 			/* pre-create memory-error message */
 			g.memerrmsg = luaS_newliteral (L, lstate.MEMERRMSG);
 			luaC_fix (L, g.memerrmsg);  /* it should never be collected */
-			g.version = lua_version (null);
+			g.version = lua530.lua_version (null);
 			luai_userstateopen (L);
         }
 		
@@ -374,7 +374,7 @@ namespace cclua {
 				luai_userstateclose (L);
 			luaM_freearray (L, g.strt.hash);
 			luaZ_freebuffer (L, g.buff);
-			freestack (L);
+			lstate.freestack (L);
 			//lua_assert (gettotalbytes (g) == sizeof (LG));
 			luaM_free (L, fromstate (L));
 		}
@@ -410,7 +410,7 @@ namespace cclua {
 			public LG lg;
 
             public lua_State () {
-				base_ci = luaM_newobject<CallInfo> ();
+				base_ci = imp.luaM_newobject<CallInfo> (null);
             }
         }
 

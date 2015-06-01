@@ -10,7 +10,7 @@ namespace cclua {
         ** Extra tags for non-values
         */
         public const int LUA_TPROTO = lua530.LUA_NUMTAGS;
-        public const int LUA_DEADKEY = lua530.LUA_NUMTAGS + 1;
+        public const int LUA_TDEADKEY = lua530.LUA_NUMTAGS + 1;
         
         /*
         ** number of all possible tags (including LUA_TNONE but excluding DEADKEY)
@@ -100,8 +100,8 @@ namespace cclua {
 		public static bool ttisCclosure (TValue o) { return checktag (o, ctb(LUA_TCCL)); }
 		public static bool ttisLclosure (TValue o) { return checktag (o, ctb(LUA_TLCL)); }
 		public static bool ttislcf (TValue o) { return checktag (o, LUA_TLCF); }
-		public static bool ttisfulluserdata (TValue o) { return checktag (o, ctb(LUA_TUSERDATA)); }
-		public static bool ttisthread (TValue o) { return checktag (o, ctb(LUA_TTHREAD)); }
+        public static bool ttisfulluserdata (TValue o) { return checktag (o, ctb (lua530.LUA_TUSERDATA)); }
+        public static bool ttisthread (TValue o) { return checktag (o, ctb (lua530.LUA_TTHREAD)); }
 		public static bool ttisdeadkey (TValue o) { return checktag (o, LUA_TDEADKEY); }
         
         
@@ -116,7 +116,7 @@ namespace cclua {
 		public static Closure clvalue (TValue o) { return check_exp<Closure> (ttisclosure (o), o.value_.o); }
 		public static LClosure clLvalue (TValue o) { return check_exp<LClosure> (ttisLclosure (o), o.value_.o); }
 		public static CClosure clCvalue (TValue o) { return check_exp<CClosure> (ttisCclosure (o), o.value_.o); }
-		public static lua_CFunction fvalue (TValue o) { return check_exp<lua_CFunction> (ttislcf (o), o.value_.o); }
+        public static lua530.lua_CFunction fvalue (TValue o) { return check_exp<lua530.lua_CFunction> (ttislcf (o), o.value_.o); }
         public static Table hvalue (TValue o) { return check_exp<Table> (ttistable (o), o.value_.o); }
 		public static long bvalue (TValue o) { return check_exp<long> (ttisboolean (o), o.value_.o); }
 		public static lua_State thvalue (TValue o) { return check_exp<lua_State> (ttisthread (o), o.value_.o); }
@@ -131,11 +131,11 @@ namespace cclua {
 
 
 		/* Macros for internal tests */
-		public static bool righttt (TValue obj) { return (ttype (obj) == gcvalue (o).tt); }
+		public static bool righttt (TValue obj) { return (ttype (obj) == gcvalue (obj).tt); }
 
 		public static void checkliveness (global_State g, TValue obj) {
 			lua_longassert ( (iscollectable (obj) == false) ||
-			                (righttt (obj) && (isdead (g, gcvalue) == false)));
+			                (righttt (obj) && (isdead (g, gcvalue (obj)) == false)));
 		}
 
 
@@ -162,13 +162,13 @@ namespace cclua {
 			checkliveness (G (L), obj);
 		}
 		
-		public static void setuvalue (lua_State L, TValue obj, Udata x) { 
-			obj.value_.o = x; settt_ (obj, ctb(LUA_TUSERDATA)); 
+		public static void setuvalue (lua_State L, TValue obj, Udata x) {
+            obj.value_.o = x; settt_ (obj, ctb (lua530.LUA_TUSERDATA)); 
 			checkliveness (G (L), obj);
 		}
 		
-		public static void setthvalue (lua_State L, TValue obj, lua_State x) { 
-			obj.value_.o = x; settt_ (obj, ctb(LUA_TTHREAD));
+		public static void setthvalue (lua_State L, TValue obj, lua_State x) {
+            obj.value_.o = x; settt_ (obj, ctb (lua530.LUA_TTHREAD));
 			checkliveness (G (L), obj);
 		}
 		
@@ -206,16 +206,16 @@ namespace cclua {
 		public static void setobjs2s (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
         /* to stack (not from same stack) */
 		public static void setobj2s (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
-		public static void setsvalue2s (lua_State L, TValue obj1, TValue obj2) { setsvalue (obj1, obj2); }
-		public static void sethvalue2s (lua_State L, TValue obj1, TValue obj2) { sethvalue (obj1, obj2); }
-		public static void setptvalue2s (lua_State L, TValue obj1, TValue obj2) { setptvalue (obj1, obj2); }
+        public static void setsvalue2s (lua_State L, TValue obj1, TString obj2) { setsvalue (L, obj1, obj2); }
+        public static void sethvalue2s (lua_State L, TValue obj1, Table obj2) { sethvalue (L, obj1, obj2); }
+        //public static void setptvalue2s (lua_State L, TValue obj1, TValue obj2) { setptvalue (L, obj1, obj2); }
         /* from table to same table */
         public static void setobjt2t (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
         /* to table */
         public static void setobj2t (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
 		/* to new object */
 		public static void setobj2n (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
-		public static void setsvalue2n (lua_State L, TValue obj1, TValue obj2) { setsvalue (obj1, obj2); }
+        public static void setsvalue2n (lua_State L, TValue obj1, TString obj2) { setsvalue (L, obj1, obj2); }
 
 
 
@@ -243,7 +243,7 @@ namespace cclua {
             public int tt_;
 
 			public TValue () {
-				Value =luaM_newobject<Value> ();
+                value_ = luaM_newobject<Value> (null);
                 tt_ = lua530.LUA_TNIL;
             }
         }
@@ -293,7 +293,7 @@ namespace cclua {
 			public byte[] data;
 
 			public Udata () {
-				user_ = luaM_newobject<Value> ();
+				user_ = luaM_newobject<Value> (null);
 			}
 		}
 
@@ -315,7 +315,7 @@ namespace cclua {
 
 		public static void setuservalue (lua_State L, Udata u, TValue o) {
 			u.user_.o = o.value_.o;
-			u.ttuv_ = o.tt_;
+			u.ttuv_ = (byte)o.tt_;
 			checkliveness (G (L), o);
 		}
 
@@ -384,13 +384,13 @@ namespace cclua {
 		}
 
 		public class CClosure : ClosureHeader {
-			lua530.lua_CFunction f;
-			TValue upvalue;  /* list of upvalues */
+            public lua530.lua_CFunction f;
+            public TValue upvalue;  /* list of upvalues */
 		}
 
 		public class LClosure : ClosureHeader {
-			Proto p;
-			TValue upvalue;  /* list of upvalues */
+            public Proto p;
+            public TValue upvalue;  /* list of upvalues */
 		}
 
 		public class Closure {
@@ -398,8 +398,8 @@ namespace cclua {
 			public LClosure l;
 
 			public Closure () {
-				c = luaM_newobject<CClosure> ();
-				l = luaM_newobject<LClosure> ();
+				c = luaM_newobject<CClosure> (null);
+                l = luaM_newobject<LClosure> (null);
 			}
 		}
 
@@ -418,7 +418,7 @@ namespace cclua {
             public Node next;
 
             public TKey () {
-				tvk = luaM_newobject<TValue> ();
+				tvk = luaM_newobject<TValue> (null);
                 next = null;
             }
 		}
@@ -438,8 +438,8 @@ namespace cclua {
             public long index;
 
             public Node () {
-				i_val = luaM_newobject<TValue> ();
-				i_key = luaM_newobject<TKey> ();
+				i_val = luaM_newobject<TValue> (null);
+				i_key = luaM_newobject<TKey> (null);
                 index = 0;
             }
         }

@@ -50,7 +50,7 @@ namespace cclua {
 
 		public static void luaT_init (lua530.lua_State L) {
 			for (int i = 0; i < TM_N; i++) {
-				TString str = luaS_new (L, luaT_eventname[i])
+                TString str = luaS_new (L, ltm.luaT_eventname[i]);
 				G (L).tmname[i] = str;
 				luaC_fix (L, str);
 			}

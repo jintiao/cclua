@@ -19,7 +19,6 @@ namespace cclua {
 		}
 
 		public static T luaM_newobject<T> (lua_State L) where T : new () {
-			untracked_bytes += sizeof (T);
             return new T ();
         }
 

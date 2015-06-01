@@ -26,7 +26,7 @@ namespace cclua {
 		}
 
 		/* how much to allocate before next GC step */
-		public const int GCSTEPSIZE = 100 * sizeof (TString);  /* ~100 small strings */
+        public static int GCSTEPSIZE = 100 * 64;  /* ~100 small strings */
 
 
 		/*
@@ -58,30 +58,30 @@ namespace cclua {
 		/*
 		** some useful bit tricks
 		*/
-		public static void resetbits (int x, int m) { x &= (byte)(~m); }
-		public static void setbits (int x, int m) { x |= m; }
-		public static bool testbits (int x, int m) { return ((x & m) != 0); }
-		public static int bitmask (int b) { return (1 << b); }
-		public static int bit2mask (int b1, int b2) { return (bitmask(b1) | bitmask(b2)); }
-		public static void l_setbit (int x, int b) { setbits (x, bitmask (b)); }
-		public static void resetbit (int x, int b) { resetbits (x, bitmask (b)); }
-		public static void testbit (int x, int b) { testbits (x, bitmask (b)); }
+        public static void resetbits (ref byte x, byte m) { x &= (byte)(~m); }
+        public static void setbits (ref byte x, byte m) { x |= m; }
+        public static bool testbits (byte x, byte m) { return ((x & m) != 0); }
+        public static byte bitmask (byte b) { return (byte)(1 << b); }
+        public static byte bit2mask (byte b1, byte b2) { return (byte)(bitmask (b1) | bitmask (b2)); }
+        public static void l_setbit (ref byte x, byte b) { setbits (ref x, bitmask (b)); }
+        public static void resetbit (ref byte x, byte b) { resetbits (ref x, bitmask (b)); }
+        public static bool testbit (byte x, byte b) { return testbits (x, bitmask (b)); }
 
 
 		/* Layout for bit use in 'marked' field: */
-		public const int WHITE0BIT = 0;  /* object is white (type 0) */
-		public const int WHITE1BIT = 1;  /* object is white (type 1) */
-		public const int BLACKBIT = 2;  /* object is black */
-		public const int FINALIZEDBIT = 3;  /* object has been marked for finalization */
+        public const byte WHITE0BIT = 0;  /* object is white (type 0) */
+        public const byte WHITE1BIT = 1;  /* object is white (type 1) */
+        public const byte BLACKBIT = 2;  /* object is black */
+        public const byte FINALIZEDBIT = 3;  /* object has been marked for finalization */
 		/* bit 7 is currently used by tests (luaL_checkmemory) */
 
-		public const int WHITEBITS = bit2mask (WHITE0BIT, WHITE1BIT);
+        public static byte WHITEBITS = bit2mask (WHITE0BIT, WHITE1BIT);
 
 
 		public static bool iswhite (GCObject x) { return testbits (x.marked, WHITEBITS); }
 		public static bool isblack (GCObject x) { return testbit (x.marked, BLACKBIT); }
 		/* neither white nor black */
-		public static bool isgray (GCObject x) { return (testbits (x.marked, WHITEBITS | (bitmask (BLACKBIT))) == false); }
+		public static bool isgray (GCObject x) { return (testbits (x.marked, (byte)(WHITEBITS | (bitmask (BLACKBIT)))) == false); }
 
 		public static bool tofinalize (GCObject x) { return testbit (x.marked, FINALIZEDBIT); }
 
@@ -90,22 +90,22 @@ namespace cclua {
 		public static bool isdead (global_State g, GCObject x) { return isdeadm (otherwhite (g), x.marked); }
 
 		public static void changewhite (GCObject x) { x.marked ^= WHITEBITS; }
-		public static void gray2black (GCObject x) { l_setbit (x.marked, BLACKBIT); }
+		public static void gray2black (GCObject x) { l_setbit (ref x.marked, BLACKBIT); }
 		
-		public static byte luaC_white (global_State g) { return (g.currentwhite & WHITEBITS); }
+		public static byte luaC_white (global_State g) { return (byte)(g.currentwhite & WHITEBITS); }
 
 
 
 
 		public static void luaC_barrierback (lua_State L, Table p, TValue v) {
-			if (iscollectable (p) && isblack (p) && iswhite (gcvalue (v)))
-				luaC_barrierback_ (L, p);
+			//if (iscollectable (p) && isblack (p) && iswhite (gcvalue (v)))
+			//	luaC_barrierback_ (L, p);
 		}
 
 
 
         public static T luaC_newobj<T> (lua_State L, int tt) where T : GCObject, new () {
-            T o = luaM_newobject<T> ();
+            T o = luaM_newobject<T> (L);
             o.tt = (byte)tt;
             return o;
         }

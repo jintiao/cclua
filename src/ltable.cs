@@ -51,7 +51,7 @@ namespace cclua {
 
             public static Node hashpointer (Table t, object p) { return hashmod (t, point2int (p)); }
 
-			public static Node[] dummynode = { luaM_newobject<Node> () };
+			public static Node[] dummynode = { luaM_newobject<Node> (null) };
 
             public static bool isdummy (Node n) { return (n == dummynode[0]); }
             public static bool isdummy (Node[] n) { return (n == dummynode); }
@@ -274,7 +274,7 @@ namespace cclua {
 			public static void setarrayvector (lua_State L, Table t, long size) {
 				luaM_reallocvector<TValue> (L, ref t.array, t.sizearray, size);
 				for (long i = t.sizearray; i < size; i++) {
-					TValue o = luaM_newobject<TValue> ();
+					TValue o = luaM_newobject<TValue> (L);
 					setnilvalue (o);
 					t.array[i] = o;
 				}
@@ -353,7 +353,7 @@ namespace cclua {
 						/* table was built with bad purposes: resort to linear search */
 						i = 1;
 						while (ttisnil (luaH_getint (t, i)) == false) i++;
-						return (i - 1);
+                        return (int)(i - 1);
 					}
 					j *= 2;
 				}
@@ -363,7 +363,7 @@ namespace cclua {
 					if (ttisnil (t.array[m - 1])) j = m;
 					else i = m;
 				}
-				return i;
+                return (int)i;
 			}
         }
 
@@ -462,7 +462,7 @@ namespace cclua {
                 if (luai_numisnan (n) != 0)
                     luaG_runerror (L, "table index is NaN");
                 if (ltable.numisinteger (n, ref k)) {  /* index is int? */
-					aux = luaM_newobject<TValue> ();
+					aux = luaM_newobject<TValue> (L);
                     setivalue (aux, k);
                     key = aux;  /* insert it as an integer */
                 }
@@ -482,7 +482,7 @@ namespace cclua {
 					while (othern.i_key.next != mp)  /* find previous */
 						othern = othern.i_key.next;
 					othern.i_key.next = f;
-					nodecopy (f, mp);  /* copy colliding node into free pos. (mp->next also goes) */
+					ltable.nodecopy (f, mp);  /* copy colliding node into free pos. (mp->next also goes) */
 					
 					setnilvalue (mp.i_val);
 					setnilvalue (mp.i_key.tvk);
@@ -556,7 +556,7 @@ namespace cclua {
                 case LUA_TNUMINT: return luaH_getint (t, ivalue (key));
                 case lua530.LUA_TNIL: return luaO_nilobject;
                 case LUA_TNUMFLT: {
-                    long k;
+                    long k = 0;
                     if (ltable.numisinteger (fltvalue (key), ref k))  /* index is int? */
                         return luaH_getint (t, k);  /* use specialized version */
                     break;
@@ -592,7 +592,7 @@ namespace cclua {
         public static void luaH_setint (lua_State L, Table t, long key, TValue value) {
             TValue p = luaH_getint (t, key);
             if (p == luaO_nilobject) {
-                TValue k = luaM_newobject<TValue> ();
+                TValue k = luaM_newobject<TValue> (L);
                 setivalue (k, key);
                 p = luaH_newkey (L, t, k);
             }
@@ -614,11 +614,11 @@ namespace cclua {
 					if (ttisnil (t.array[m - 1])) j = m;
 					else i = m;
 				}
-				return i;
+                return (int)i;
 			}
 			/* else must find a boundary in hash part */
 			else if (ltable.isdummy (t.node))  /* hash part is empty? */
-				return j;  /* that is easy... */
+				return (int)j;  /* that is easy... */
 			else return ltable.unbound_search (t, j);
 		}
     }

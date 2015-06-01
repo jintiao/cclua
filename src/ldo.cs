@@ -1,5 +1,7 @@
 ﻿using System;
 
+using lua_longjmp = cclua.lua530.lua_longjmp;
+
 namespace cclua {
 
     public static partial class imp {
@@ -33,15 +35,15 @@ namespace cclua {
 			public static void seterrorobj (lua530.lua_State L, int errcode, int oldtop) {
 				switch (errcode) {
 				case lua530.LUA_ERRMEM: {  /* memory error? */
-					setsvalue2s (L, oldtop, G (L).memerrmsg);  /* reuse preregistered msg. */
+					setsvalue2s (L, L.stack[oldtop], G (L).memerrmsg);  /* reuse preregistered msg. */
 					break;					         
 				}
 				case lua530.LUA_ERRERR: {
-					setsvalue2s (L, oldtop, luaS_newliteral (L, "error in error handling"));
+					setsvalue2s (L, L.stack[oldtop], luaS_newliteral (L, "error in error handling"));
 					break;
 				}
 				default: {
-					setobjs2s(L, oldtop, L->top - 1);  /* error message on current top */
+					setobjs2s(L, L.stack[oldtop], L.stack[L.top - 1]);  /* error message on current top */
 					break;
 				}
 				}
@@ -52,18 +54,18 @@ namespace cclua {
 		public static void luaD_throw (lua530.lua_State L, int errcode) {
 			if (L.errorJmp != null) {  /* thread has an error handler? */
 				L.errorJmp.status = errcode;
-				LUAI_THROW (L, L.errorJmp);
+				ldo.LUAI_THROW (L, L.errorJmp);
 			}
 			else {  /* thread has no error handler */
 				global_State g = G (L);
 				L.status = (byte)errcode;  /* mark it as dead */
 				if (g.mainthread.errorJmp != null) {  /* main thread has a handler? */
-					setobjs2s (L, g.mainthread.top++, L.top - 1);  /* copy error obj. */
+                    setobjs2s (L, g.mainthread.stack[g.mainthread.top++], L.stack[L.top - 1]);  /* copy error obj. */
 					luaD_throw (g.mainthread, errcode);  /* re-throw in main thread */
 				}
 				else {  /* no handler at all; abort */
 					if (g.panic != null) {  /* panic function? */
-						seterrorobj (L, errcode, L.top);  /* assume EXTRA_STACK */
+						ldo.seterrorobj (L, errcode, L.top);  /* assume EXTRA_STACK */
 						if (L.ci.top < L.top)
 							L.ci.top = L.top;  /* pushing msg. can break this invariant */
 						lua_unlock (L);
@@ -79,11 +81,11 @@ namespace cclua {
 
 		public static int luaD_rawrunprotected (lua530.lua_State L, Pfunc f, object ud) {
             ushort oldCcalls = L.nCcalls;
-			lua_longjmp lj = luaM_newobject<lua_longjmp> ();
+			lua_longjmp lj = luaM_newobject<lua_longjmp> (L);
             lj.status = lua530.LUA_OK;
             lj.previous = L.errorJmp;  /* chain new error handler */
             L.errorJmp = lj;
-			LUAI_TRY (L, f, ud, lj);
+			ldo.LUAI_TRY (L, f, ud, lj);
             L.errorJmp = lj.previous;  /* restore old error handler */
             L.nCcalls = oldCcalls;
             return lj.status;

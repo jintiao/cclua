@@ -1,5 +1,7 @@
 ﻿using System;
 
+using lua_State = cclua.lua530.lua_State;
+
 namespace cclua {
 
 	public static partial class imp {
@@ -72,11 +74,11 @@ namespace cclua {
 		public const int NUM_RESERVED = TK_WHILE - FIRST_RESERVED + 1;
 
 
-		public static void luaX_init (lua530.lua_State L) {
+		public static void luaX_init (lua_State L) {
 			TString e = luaS_new (L, LUA_ENV);  /* create env name */
 			luaC_fix (L, e);
 			for (int i = 0; i < NUM_RESERVED; i++) {
-				TString ts = luaS_new (L, luaX_tokens[i]);
+                TString ts = luaS_new (L, llex.luaX_tokens[i]);
 				luaC_fix (L, ts);  /* reserved words are never collected */
 				ts.extra = (byte)(i + 1);  /* reserved word */
 			}
