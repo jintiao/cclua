@@ -1,5 +1,7 @@
 ﻿using System;
 
+using lua_State = cclua.lua530.lua_State;
+
 namespace cclua {
 
 	public static partial class imp {
@@ -32,31 +34,33 @@ namespace cclua {
 		* WARNING: if you change the order of this enumeration,
 		* grep "ORDER TM" and "ORDER OP"
 		*/
-		public const int TM_INDEX = 0;
-		public const int TM_NEWINDEX = 1;
-		public const int TM_GC = 2;
-		public const int TM_MODE = 3;
-		public const int TM_LEN = 4;
-		public const int TM_EQ = 5;  /* last tag method with fast access */
-		public const int TM_ADD = 6;
-		public const int TM_SUB = 7;
-		public const int TM_MUL = 8;
-		public const int TM_MOD = 9;
-		public const int TM_POW = 10;
-		public const int TM_DIV = 11;
-		public const int TM_IDIV = 12;
-		public const int TM_BAND = 13;
-		public const int TM_BOR = 14;
-		public const int TM_BXOR = 15;
-		public const int TM_SHL = 16;
-		public const int TM_SHR = 17;
-		public const int TM_UNM = 18;
-		public const int TM_BNOT = 19;
-		public const int TM_LT = 20;
-		public const int TM_LE = 21;
-		public const int TM_CONCAT = 22;
-		public const int TM_CALL = 23;
-		public const int TM_N = 24;  /* number of elements in the enum */
+        public enum TMS {
+          TM_INDEX,
+          TM_NEWINDEX,
+          TM_GC,
+          TM_MODE,
+          TM_LEN,
+          TM_EQ,  /* last tag method with fast access */
+          TM_ADD,
+          TM_SUB,
+          TM_MUL,
+          TM_MOD,
+          TM_POW,
+          TM_DIV,
+          TM_IDIV,
+          TM_BAND,
+          TM_BOR,
+          TM_BXOR,
+          TM_SHL,
+          TM_SHR,
+          TM_UNM,
+          TM_BNOT,
+          TM_LT,
+          TM_LE,
+          TM_CONCAT,
+          TM_CALL,
+          TM_N		/* number of elements in the enum */
+        } ;
 
 
 
@@ -64,11 +68,51 @@ namespace cclua {
 
 
 		public static void luaT_init (lua530.lua_State L) {
-			for (int i = 0; i < TM_N; i++) {
-                TString str = luaS_new (L, ltm.luaT_eventname[i]);
-				G (L).tmname[i] = str;
-				luaC_fix (L, str);
+			for (int i = 0; i < (int)TMS.TM_N; i++) {
+                G (L).tmname[i] = luaS_new (L, ltm.luaT_eventname[i]);
+                luaC_fix (L, G (L).tmname[i]);  /* never collect these names */
 			}
 		}
+
+
+        /*
+        ** function to be used with macro "fasttm": optimized for absence of
+        ** tag methods
+        */
+        public static TValue luaT_gettm (Table events, TMS ev, TString ename) {
+            TValue tm = luaH_getstr (events, ename);
+            lua_assert (ev <= TMS.TM_EQ);
+            if (ttisnil (tm)) {  /* no tag method? */
+                events.flags |= (byte)(1 << (byte)ev);  /* cache this fact */
+                return null;
+            }
+            return tm;
+        }
+
+
+        public static TValue luaT_gettmbyobj (lua_State L, TValue o, TMS ev) {
+            Table mt;
+            switch (ttnov (o)) {
+                case lua530.LUA_TTABLE:
+                    mt = hvalue (o).metatable;
+                    break;
+                case lua530.LUA_TUSERDATA:
+                    mt = uvalue (o).metatable;
+                    break;
+                default:
+                    mt = G (L).mt[ttnov (o)];
+                    break;
+            }
+            return ((mt == null) ? luaH_getstr (mt, G (L).tmname[(byte)ev]) : luaO_nilobject);
+        }
+
+
+
+
+
+
+
+
+
 	}
 }

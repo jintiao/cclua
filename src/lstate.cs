@@ -219,7 +219,7 @@ namespace cclua {
 				strt = luaM_newobject<stringtable> (null);
                 l_registry = luaM_newobject<TValue> (null);
                 buff = luaM_newobject<MBuffer> (null);
-                tmname = luaM_emptyvector<TString> (null, TM_N);
+                tmname = luaM_emptyvector<TString> (null, (int)TMS.TM_N);
                 mt = luaM_emptyvector<Table> (null, lua530.LUA_NUMTAGS);
             }
         }
