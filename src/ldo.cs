@@ -13,29 +13,37 @@ namespace cclua {
             public const int ERRORSTACKSIZE = LUAI_MAXSTACK + 200;
 
 			
-			public class LuaException : Exception {
-				public lua_longjmp lj;
-				public LuaException (lua_longjmp jmp) {
-					lj = jmp;
-				}
-			}
+			
+			public static void incr_top (lua_State L) { L.top++; luaD_checkstack (L); }
+
+			/*
+			** {======================================================
+			** Error-recovery functions
+			** =======================================================
+			*/
+
+			/*
+			** LUAI_THROW/LUAI_TRY define how Lua does exception handling. By
+			** default, Lua handles errors with exceptions when compiling as
+			** C++ code, with _longjmp/_setjmp when asked to use them, and with
+			** longjmp/setjmp otherwise.
+			*/
 
 			public static void LUAI_TRY (lua_State L, Pfunc f, object ud, lua_longjmp lj) {
-				try {
-					f (L, ud);
-				}
-				catch (Exception) {
-					if (lj.status == 0) lj.status = -1;
-				}
+				try { f (L, ud); }
+				catch (Exception) { if (lj.status == 0) lj.status = -1; }
 			}
 
-            public static void LUAI_THROW (lua_State L, lua_longjmp lj) {
-				throw (new LuaException (lj));
+			public static void LUAI_THROW (lua_State L, lua_longjmp lj) { throw (new LuaException (lj)); }
+			
+			public class LuaException : Exception {
+				public lua_longjmp lj;
+				public LuaException (lua_longjmp jmp) { lj = jmp; }
 			}
 
-			public static void abort () {
-				// TODO
-			}
+			public static void abort () { // TODO  }
+
+
 
 			public static void seterrorobj (lua_State L, int errcode, int oldtop) {
 				switch (errcode) {
@@ -57,11 +65,25 @@ namespace cclua {
 
 
             public static void correctstack (lua_State L, TValue[] oldstack) {
-                // TODO
+				for (UpVal up = L.openupval; up != NULL; up = up->u.open.next)
+					up.v = L.stack[up.level];
             }
 
 
 		}
+			
+			
+		/* type of protected functions, to be ran by 'runprotected' */
+		public delegate void Pfunc (lua_State L, object ud);
+
+
+		public static void luaD_checkstack (lua_State L, int n) {
+			if (L.stack_last - L.top <= n)
+				luaD_growstack (L, n);
+			else
+				condmovestack (L);
+		}
+
 
 		public static void luaD_throw (lua_State L, int errcode) {
 			if (L.errorJmp != null) {  /* thread has an error handler? */
@@ -88,8 +110,6 @@ namespace cclua {
 			}
 		}
 
-        /* type of protected functions, to be ran by 'runprotected' */
-        public delegate void Pfunc (lua_State L, object ud);
 
 		public static int luaD_rawrunprotected (lua_State L, Pfunc f, object ud) {
             ushort oldCcalls = L.nCcalls;
@@ -102,7 +122,6 @@ namespace cclua {
             L.nCcalls = oldCcalls;
             return lj.status;
         }
-
 
 
         public static void luaD_reallocstack (lua_State L, int newsize) {
