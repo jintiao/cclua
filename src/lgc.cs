@@ -95,22 +95,35 @@ namespace cclua {
 		public static byte luaC_white (global_State g) { return (byte)(g.currentwhite & WHITEBITS); }
 
 
-        public static void luaC_checkGC (lua_State L) { }
+        public static void luaC_checkGC (lua_State L) { 
+			if (G (L).GCdebt > 0) {
+				luaC_step (L);
+			}
+			condchangemem (L);
+		}
 
 
 
-        public static void luaC_barrier (lua_State L, GCObject p, TValue v) {
+		public static void luaC_barrier (lua_State L, GCObject p, TValue v) {
+			if (iscollectable (p) && isblack (p) && iswhite (gcvalue (v)))
+				luaC_barrier_ (L, p, gcvalue (v));
         }
 
 		public static void luaC_barrierback (lua_State L, Table p, TValue v) {
-			//if (iscollectable (p) && isblack (p) && iswhite (gcvalue (v)))
-			//	luaC_barrierback_ (L, p);
+			if (iscollectable (p) && isblack (p) && iswhite (gcvalue (v)))
+				luaC_barrierback_ (L, p, gcvalue (v));
 		}
 
         public static void luaC_barrierback (lua_State L, Table p, int v) { luaC_barrierback (L, p, L.stack[v]); }
 
+		public static void luaC_objbarrier (lua_State L, TValue p, TValue v) {
+			if (isblack (p) && iswhite (o))
+				luaC_barrier_ (L, gcvalue (p), gcvalue (v));
+		}
 
         public static void luaC_upvalbarrier (lua_State L, UpVal uv) {
+			if (iscollectable (uv.v) && upisopen (uv) == false)
+				luaC_upvalbarrier_ (L, uv);
         }
 
 

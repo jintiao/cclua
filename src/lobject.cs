@@ -28,6 +28,10 @@ namespace cclua {
             public static int l_str2int (byte[] s, ref long result) {
                 return 0;
             }
+
+
+			/* maximum length of the conversion of a number to a string */
+			public const int MAXNUMBER2STR = 50;
         }
         
         /*
@@ -296,7 +300,7 @@ namespace cclua {
 		public class TString : GCObject {
 			public byte extra;  /* reserved words for short strings; "has hash" for longs */
             public long hash;
-            public long len;  /* number of characters in string */
+            public int len;  /* number of characters in string */
             public TString hnext;  /* linked list for hash table */
             public byte[] data;
         }
@@ -578,6 +582,50 @@ namespace cclua {
             }
             return e;  /* success; return string size */
         }
+
+
+		/*
+		** Convert a number object to a string
+		*/
+		public static void luaO_tostring (lua_State L, int obj) {
+			lua_assert (ttisnumber (obj));
+			int len;
+			byte[] buff = new Byte[MAXNUMBER2STR];
+			if (ttisinteger (obj))
+				len = lua_integer2str (buff, ivalue (obj));
+			else {
+				len = lua_number2str (buff, fltvalue (obj));
+				if (buff[strspn (buff, "1234567890")] == '\0') {  /* looks like an int? */
+					buff[len++] = '.';
+					buff[len++] = '0';  /* adds '.0' to result */
+				}
+			}
+			setsvalue2s (L, obj, luaS_newlstr (L, buff, len));
+		}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
 }

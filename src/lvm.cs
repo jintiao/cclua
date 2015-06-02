@@ -83,6 +83,9 @@ namespace cclua {
             }
 
 
+			/* number of bits in an integer */ 
+			public const int NBITS = sizeof (long) * CHAR_BIT;
+
 
         }
 
@@ -281,7 +284,7 @@ namespace cclua {
         ** Main operation for equality of Lua values; return 't1 == t2'. 
         ** L == NULL means raw equality (no metamethods)
         */
-        public static bool luaV_equalobj (lua530.lua_State L, TValue t1, TValue t2) {
+        public static bool luaV_equalobj (lua_State L, TValue t1, TValue t2) {
             if (ttype (t1) != ttype (t2)) {  /* not the same variant? */
                 if (ttnov (t1) != ttnov (t2) || ttnov (t1) != lua530.LUA_TNUMBER)
                     return false;  /* only numbers can be equal with different variants */
@@ -295,16 +298,197 @@ namespace cclua {
                 }
             }
             /* values have same type and same variant */
+            TValue tm;
             switch (ttype (t1)) {
-                case lua530.LUA_TNIL: return true;
-                case LUA_TNUMINT: return (ivalue (t1) == ivalue (t2));
-                default:
-                    return (gcvalue (t1) == gcvalue (t2));
+            case lua530.LUA_TNIL: return true;
+            case LUA_TNUMINT: return (ivalue (t1) == ivalue (t2));
+			case LUA_TNUMFLT: return luai_numeq (fltvalue (t1), fltvalue (t2));
+			case LUA_TBOOLEAN: return (bvalue (t1) == bvalue (t2));  /* true must be 1 !! */
+			case LUA_TLIGHTUSERDATA: return (pvalue (t1) == pvalue (t2));
+			case LUA_TLCF: return (fvalue (t1) == fvalue (t2));
+			case LUA_TSHRSTR: return eqshrstr (tsvalue (t1), tsvalue (t2));
+			case LUA_TLNGSTR: return luaS_eqlngstr (tsvalue (t1), tsvalue (t2));
+			case LUA_TUSERDATA: {
+				if (uvalue (t1) == uvalue (t2)) return true;
+				else if (L == null) return false;
+				tm = fasttm (L, uvalue (t1).metatable, TMS.TM_EQ);
+				if (tm == null)
+					tm = fasttm (L, uvalue (t2).metatable, TMS.TM_EQ);
+				break;  /* will try TM */
+			}
+			case LUA_TTABLE: {
+				if (hvalue (t1) == hvalue (t2)) return true;
+				else if (L == null) return false;
+				tm = fasttm (L, hvalue (t1).metatable, TMS.TM_EQ);
+				if (tm == null)
+					tm = fasttm (L, hvalue (t2).metatable, TMS.TM_EQ);
+				break;  /* will try TM */
+			}
+            default:
+                return (gcvalue (t1) == gcvalue (t2));
             }
+			luaT_callTM (L, tm, t1, t2, L.top, 1);  /* call TM */
+			return (l_isfalse (L.top) == false);
         }
+        
+        
+		/*
+		** Main operation for concatenation: concat 'total' values in the stack,
+		** from 'L->top - total' up to 'L->top - 1'.
+		*/
+		public static void luaV_concat (lua_State L, int total) {
+			lua_assert (total >= 2);
+			do {
+				int top = L.top;
+				int n = 2;  /* number of elements handled in this pass (at least 2) */
+				if ((ttisstring (top - 2) || cvt2str (top - 2)) == false || tostring (top - 1) == false)
+					luaT_trybinTM (L, top - 2, top - 1, top - 2, TMS.TM_CONCAT);
+				else if (tsvalue (top - 1).len == 0)  /* second operand is empty? */
+					tostring (top - 2);
+				else if (ttisstring (top - 2) && tsvalue (top - 2).len == 0) {
+					setobjs2s (L, top - 2, top - 1);  /* result is second op. */
+				}
+				else {
+					/* at least two non-empty string values; get as many as possible */
+					int tl = tsvalue (top - 1).len;
+					/* collect total length */
+					for (int i = 1; i < total && tostring (L, top - i - 1); i++) {
+						int l = tsvalue (top - i - 1).len;
+						if (l >= MAX_SIZE - tl)
+							luaG_runerror (L, "string length overflow");
+						tl += l;
+					}
+					byte[] buffer = luaZ_openspace (L, G (L).buff, tl);
+					tl = 0;
+					n = i;
+					do {  /* copy all strings to buffer */
+						l = tsvalue (top - i).len;
+						memcpy (buffer, tl, svalue (top - i), l);
+						tl += l;
+					} while (--i > 0);
+					setsvalue2s (L, top - n, luaS_newlstr (L, buffer, tl));  /* create result */
+				}
+				total -= n - 1;  /* got 'n' strings to create 1 new */
+				L.top -= n - 1;  /* popped 'n' strings and pushed one */
+			} while (total > 1);  /* repeat until only 1 result left */
+		}
+
+
+		/*
+		** Main operation 'ra' = #rb'.
+		*/
+		public static void luaV_objlen (lua_State L, int ra, TValue rb) {
+			TValue tm;
+			switch (ttnov (rb)) {
+			case LUA_TTABLE:{
+				Table h = hvalue (rb);
+				tm = fasttm (L, h, TMS.TM_LEN);
+				if (tm != null) break;  /* metamethod? break switch to call it */
+				setivalue (ra, luaH_getn (h));  /* else primitive len */
+				return;
+			}
+			case LUA_TSTRING: {
+				setivalue (ra, tsvalue (rb).len);
+				return;
+			}
+			default: {  /* try metamethod */
+				tm = luaT_gettmbyobj (L, rb, TMS.TM_LEN);
+				if (ttisnil (tm))  /* no metamethod? */
+					luaG_typeerror (L, rb, "get length of");
+				break;
+			}
+			}
+			luaT_callTM(L, tm, rb, rb, ra, 1);
+		}
+
+
+		/*
+		** Integer division; return 'm // n', that is, floor(m/n).
+		** C division truncates its result (rounds towards zero).
+		** 'floor(q) == trunc(q)' when 'q >= 0' or when 'q' is integer,
+		** otherwise 'floor(q) == trunc(q) - 1'.
+		*/
+		public static long luaV_div (lua_State L, long m, long n) {
+			if (n + 1u <= 1u) {  /* special cases: -1 or 0 */
+				if (n == 0)
+					luaG_runerror(L, "attempt to divide by zero");
+				return (long)((ulong)0 - (ulong)m);  /* n==-1; avoid overflow with 0x80000...//-1 */
+			}
+			else {
+				long q = m / n;
+				if ((m ^ n) < 0 && m % n != 0)  /* 'm/n' would be negative non-integer? */
+					q -= 1;  /* correct result for different rounding */
+				return q;
+			}
+		}
+
+
+		/*
+		** Integer modulus; return 'm % n'. (Assume that C '%' with 
+		** negative operands follows C99 behavior. See previous comment
+		** about luaV_div.)
+		*/
+		public static long luaV_mod (lua_State L, long m, long n) {
+			if (n + 1u <= 1u) {  /* special cases: -1 or 0 */
+				if (n == 0)
+					luaG_runerror(L, "attempt to divide by zero");
+				return 0;  /* m % -1 == 0; avoid overflow with 0x80000...%-1 */
+			}
+			else {
+				long r = m % n;
+				if (r != 0 && (m ^ n) < 0)  /* 'm/n' would be non-integer negative? */
+					r += n;  /* correct result for different rounding */
+				return r;
+			}
+		}
+
+
+		/*
+		** Shift left operation. (Shift right just negates 'y'.)
+		*/
+		public static long luaV_shiftl (long x, long y) {
+			if (y < 0) {  /* shift right? */
+				if (y <= NBITS) return 0;
+				else return (x >> (-y));
+			}
+			else {  /* shift left */
+				if (y >= NBITS) return 0;
+				else return (x << y);
+			}
+		}
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
 
         public static void luaV_execute (lua_State L) {
         }
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     }
 }
