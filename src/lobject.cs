@@ -5,6 +5,30 @@ using lua_State = cclua.lua530.lua_State;
 namespace cclua {
 	
     public static partial class imp {
+
+        public static class lobject {
+
+            public static byte[] log_2 = {
+                0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
+                6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
+                7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+                7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
+                8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+                8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+                8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
+                8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
+            };
+
+
+            public static int l_str2d (byte[] s, ref double result) {
+                return 0;
+            }
+
+
+            public static int l_str2int (byte[] s, ref long result) {
+                return 0;
+            }
+        }
         
         /*
         ** Extra tags for non-values
@@ -109,6 +133,7 @@ namespace cclua {
         /* Macros to access values */
         public static long ivalue (TValue o) { return check_exp<long> (ttisinteger (o), o.value_.o); }
         public static double fltvalue (TValue o) { return check_exp<double> (ttisfloat (o), o.value_.o); }
+        public static double nvalue (TValue o) { return fltvalue (o); }
         public static GCObject gcvalue (TValue o) { return check_exp<GCObject> (iscollectable (o), o.value_.o); }
         public static object pvalue (TValue o) { return check_exp<object> (ttislightuserdata (o), o.value_.o); }
 		public static TString tsvalue (TValue o) { return check_exp<TString> (ttisstring (o), o.value_.o); }
@@ -198,23 +223,33 @@ namespace cclua {
 			checkliveness (G (L), obj1);
 		}
 
+        public static void setobj (lua_State L, int obj1, TValue obj2) { setobj (L, L.stack[obj1], obj2); }
+        public static void setobj (lua_State L, TValue obj1, int obj2) { setobj (L, obj1, L.stack[obj2]); }
+        public static void setobj (lua_State L, int obj1, int obj2) { setobj (L, L.stack[obj1], L.stack[obj2]); }
+
 		/*
 		** different types of assignments, according to destination
 		*/
 		
 		/* from stack to (same) stack */
-		public static void setobjs2s (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobjs2s (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobjs2s (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
         /* to stack (not from same stack) */
-		public static void setobj2s (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2s (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2s (lua_State L, int obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2s (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
         public static void setsvalue2s (lua_State L, TValue obj1, TString obj2) { setsvalue (L, obj1, obj2); }
         public static void sethvalue2s (lua_State L, TValue obj1, Table obj2) { sethvalue (L, obj1, obj2); }
-        //public static void setptvalue2s (lua_State L, TValue obj1, TValue obj2) { setptvalue (L, obj1, obj2); }
         /* from table to same table */
         public static void setobjt2t (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobjt2t (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
         /* to table */
         public static void setobj2t (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2t (lua_State L, TValue obj1, int obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2t (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
 		/* to new object */
-		public static void setobj2n (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2n (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2n (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
         public static void setsvalue2n (lua_State L, TValue obj1, TString obj2) { setsvalue (L, obj1, obj2); }
 
 
@@ -246,6 +281,11 @@ namespace cclua {
                 value_ = luaM_newobject<Value> (null);
                 tt_ = lua530.LUA_TNIL;
             }
+        }
+
+        public static void tvcopy (TValue o1, TValue o2) {
+            o1.value_ = o2.value_;
+            o1.tt_ = o2.tt_;
         }
 
 
@@ -465,28 +505,78 @@ namespace cclua {
         public static long twoto (int x) { return (1 << x); }
         public static long sizenode (Table t) { return twoto (t.lsizenode); }
 
+
 		/*
 		** (address of) a fixed nil value
 		*/
 		public static TValue luaO_nilobject = new TValue ();
 
 
-        private static byte[] log_2 = {
-            0,1,2,2,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
-            6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-            7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
-            7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
-            8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
-            8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
-            8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,
-            8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8
-        };
+        /*
+        ** converts an integer to a "floating point byte", represented as
+        ** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
+        ** eeeee != 0 and (xxx) otherwise.
+        */
+        public static int luaO_int2fb (uint x) {
+            int e = 0;
+            if (x < 8) return (int)x;
+            while (x >= 0x10) {
+                x = (x + 1) >> 1;
+                e++;
+            }
+            return (((e + 1) << 3) | ((int)(x - 8)));
+        }
+
+
+        /* converts back */
+        public static int luaO_fb2int (int x) {
+            int e = (x >> 3) & 0x1f;
+            if (e == 0) return x;
+            else return ((x & 7) + 8) << (e - 1);
+        }
+
 
         public static int luaO_ceillog2 (long x) {
             int l = 0;
             x--;
             while (x >= 256) { l += 8; x >>= 8; }
-            return l + log_2[x];
+            return l + lobject.log_2[x];
+        }
+
+
+        public static void luaO_arith (lua_State L, int op, TValue p1, TValue p2, TValue res) {
+            if (op == lua530.LUA_OPBAND ||
+                    op == lua530.LUA_OPBOR ||
+                    op == lua530.LUA_OPBXOR ||
+                    op == lua530.LUA_OPSHL ||
+                    op == lua530.LUA_OPSHR ||
+                    op == lua530.LUA_OPBNOT) {  /* operate only on integers */
+                long i1 = 0;
+                long i2 = 0;
+                if (tointeger (p1, ref i1) != 0 && tointeger (p2, ref i2) != 0) {
+                }
+                    
+            }
+
+        }
+
+
+        public static int luaO_str2num (byte[] s, TValue o) {
+            long i = 0;
+            double n = 0;
+            int e = lobject.l_str2int (s, ref i);  /* try as an integer */
+            if (e != 0) {
+                setivalue (o, i);
+            }
+            else {
+                e = lobject.l_str2d (s, ref n);  /* else try as a float */
+                if (e != 0) {
+                    setfltvalue (o, n);
+                }
+                else
+                    return 0;  /* conversion failed */
+            }
+            return e;  /* success; return string size */
         }
     }
 

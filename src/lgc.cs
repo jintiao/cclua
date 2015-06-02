@@ -107,6 +107,9 @@ namespace cclua {
 			//	luaC_barrierback_ (L, p);
 		}
 
+        public static void luaC_barrierback (lua_State L, Table p, int v) { luaC_barrierback (L, p, L.stack[v]); }
+
+
         public static void luaC_upvalbarrier (lua_State L, UpVal uv) {
         }
 

@@ -63,6 +63,15 @@ namespace cclua {
         } ;
 
 
+        public static TValue gfasttm (global_State g, Table et, TMS e) {
+            if (et == null) return null;
+            if ((et.flags & (1 << (int)e)) != 0) return null;
+            return luaT_gettm (et, e, g.tmname[(int)e]);
+        }
+
+        public static TValue fasttm (lua_State L, Table et, TMS e) { return gfasttm (G (L), et, e); }
+
+
 
         public static string ttypename (int x) { return ltm.luaT_typenames_[x + 1]; }
 
@@ -107,7 +116,38 @@ namespace cclua {
         }
 
 
+        public static void luaT_callTM (lua_State L, TValue f, TValue p1, TValue p2, int p3, int hasres) {
+            int result = savestack (L, p3);
+            setobj2s (L, L.top++, f);  /* push function (assume EXTRA_STACK) */
+            setobj2s (L, L.top++, p1);  /* 1st argument */
+            setobj2s (L, L.top++, p2);  /* 2nd argument */
+            if (hasres == 0)  /* no result? 'p3' is third argument */
+                setobj2s (L, L.top++, p3);  /* 3rd argument */
+            /* metamethod may yield only when called from Lua code */
+            luaD_call (L, L.top - (4 - hasres), hasres, (isLua (L.ci) ? 1 : 0));
+            if (hasres != 0) {  /* if has result, move it to its place */
+                p3 = restorestack (L, result);
+                setobjs2s (L, p3, --L.top);
+            }
+        }
 
+
+        public static bool luaT_callbinTM (lua_State L, TValue p1, TValue p2, int res, TMS ev) {
+            TValue tm = luaT_gettmbyobj (L, p1, ev);  /* try first operand */
+            if (ttisnil (tm))
+                tm = luaT_gettmbyobj (L, p2, ev);  /* try second operand */
+            if (ttisnil (tm)) return false;
+            luaT_callTM (L, tm, p1, p2, res, 1);
+            return true;
+        }
+
+
+        public static int luaT_callorderTM (lua_State L, TValue p1, TValue p2, TMS ev) {
+            if (luaT_callbinTM (L, p1, p2, L.top, ev) == false)
+                return -1;  /* no metamethod */
+            else
+                return (l_isfalse (L.stack[L.top]) ? 0 : 1);
+        }
 
 
 

@@ -64,6 +64,48 @@ namespace cclua {
         public delegate void lua_Hook (lua_State L, lua_Debug ar);
 
 
+
+        /*
+        ** Comparison and arithmetic functions
+        */
+        public const int LUA_OPADD = 0;  /* ORDER TM, ORDER OP */
+        public const int LUA_OPSUB = 1;
+        public const int LUA_OPMUL = 2;
+        public const int LUA_OPMOD = 3;
+        public const int LUA_OPPOW = 4;
+        public const int LUA_OPDIV = 5;
+        public const int LUA_OPIDIV = 6;
+        public const int LUA_OPBAND = 7;
+        public const int LUA_OPBOR = 8;
+        public const int LUA_OPBXOR = 9;
+        public const int LUA_OPSHL = 10;
+        public const int LUA_OPSHR = 11;
+        public const int LUA_OPUNM = 12;
+        public const int LUA_OPBNOT = 13;
+
+
+        public const int LUA_OPEQ = 0;
+        public const int LUA_OPLT = 1;
+        public const int LUA_OPLE = 2;
+
+
+
+        /*
+        ** garbage-collection function and options
+        */
+        public const int LUA_GCSTOP = 0;
+        public const int LUA_GCRESTART = 1;
+        public const int LUA_GCCOLLECT = 2;
+        public const int LUA_GCCOUNT = 3;
+        public const int LUA_GCCOUNTB = 4;
+        public const int LUA_GCSTEP = 5;
+        public const int LUA_GCSETPAUSE = 6;
+        public const int LUA_GCSETSTEPMUL = 7;
+        public const int LUA_GCISRUNNING = 9;
+
+
+
+
         /*
         ** {======================================================================
         ** Debug API

@@ -168,7 +168,7 @@ namespace cclua {
 					Node n = mainposition (t, key);
 					for (; ; ) {  /* check whether 'key' is somewhere in the chain */
 						/* key may be dead already, but it is ok to use it in 'next' */
-						if ((luaV_rawequalobj (n.i_key.tvk, key) != 0) ||
+						if (luaV_rawequalobj (n.i_key.tvk, key) ||
 						    (ttisdeadkey (n.i_key.tvk) && iscollectable (key) && (deadvalue (n.i_key.tvk) == gcvalue (key)))) {
 							i = n.index;  /* key index in hash table */
 							/* hash elements are numbered after array ones */
@@ -368,6 +368,9 @@ namespace cclua {
         }
 
 
+        public static void invalidateTMcache (Table t) { t.flags = 0; }
+
+
         public static int luaH_next (lua_State L, Table t, int stkid) {
             TValue key = L.stack[stkid];
             long i = ltable.findindex (L, t, key);  /* find original element */	
@@ -459,7 +462,7 @@ namespace cclua {
             else if (ttisfloat (key)) {
                 double n = fltvalue (key);
                 long k = 0;
-                if (luai_numisnan (n) != 0)
+                if (luai_numisnan (n))
                     luaG_runerror (L, "table index is NaN");
                 if (ltable.numisinteger (n, ref k)) {  /* index is int? */
 					aux = luaM_newobject<TValue> (L);
@@ -565,7 +568,7 @@ namespace cclua {
 
             Node n = ltable.mainposition (t, key);
             for (; ; ) {  /* check whether 'key' is somewhere in the chain */
-                if (luaV_rawequalobj (n.i_key.tvk, key) != 0)
+                if (luaV_rawequalobj (n.i_key.tvk, key))
                     return n.i_val;  /* that's it */
                 else {
                     n = n.i_key.next;

@@ -244,10 +244,10 @@ namespace cclua {
         }
 
 
-        public static int lua_rawequal (lua_State L, int index1, int index2) {
+        public static bool lua_rawequal (lua_State L, int index1, int index2) {
             TValue o1 = imp.index2addr (L, index1);
             TValue o2 = imp.index2addr (L, index2);
-            return (imp.isvalid (o1) && imp.isvalid (o2)) ? imp.luaV_rawequalobj (o1, o2) : 0;
+            return (imp.isvalid (o1) && imp.isvalid (o2)) ? imp.luaV_rawequalobj (o1, o2) : false;
         }
 
 
