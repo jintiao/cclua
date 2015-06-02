@@ -363,7 +363,7 @@ namespace cclua {
 			public int linedefined;
 			public int lastlinedefined;
 			public TValue k;  /* constants used by the function */
-			public uint code;
+			public int code;
 			public Proto[] p;  /* functions defined inside the function */
 			public int lineinfo;  /* map from opcodes to source lines (debug information) */
 			public LocVar locvars;  /* information about local variables (debug information) */

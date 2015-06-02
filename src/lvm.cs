@@ -1,5 +1,7 @@
 ﻿using System;
 
+using lua_State = cclua.lua530.lua_State;
+
 namespace cclua {
 
     public static partial class imp {
@@ -76,6 +78,10 @@ namespace cclua {
 
         public static int luaV_rawequalobj (TValue t1, TValue t2) {
             return luaV_equalobj (null, t1, t2);
+        }
+
+
+        public static void luaV_execute (lua_State L) {
         }
     }
 }

@@ -127,8 +127,8 @@ namespace cclua {
         */
         public class CallInfo {
             public class lc {
-                public uint fbase;  /* base for this function */
-                public ulong[] savedpc;
+                public int fbase;  /* base for this function */
+                public int savedpc;
             }
             public class cc {
                 public lua530.lua_KFunction k;  /* continuation in case of yields */
@@ -390,7 +390,7 @@ namespace cclua {
             public int top;  /* first free slot in the stack */
             public global_State l_G;
             public CallInfo ci;  /* call info for current function */
-            public ulong oldpc;  /* last pc traced */
+            public int oldpc;  /* last pc traced */
             public int stack_last;  /* last free slot in the stack */
             public TValue[] stack;  /* stack base */
             public UpVal openupval;  /* list of open upvalues in this stack */
@@ -399,7 +399,7 @@ namespace cclua {
             public lua_longjmp errorJmp;  /* current error recover point */
             public CallInfo base_ci;  /* CallInfo for first level (C calling Lua) */
             public lua_Hook hook;
-            public long errfunc;  /* current error handling function (stack index) */
+            public int errfunc;  /* current error handling function (stack index) */
             public int stacksize;
             public int basehookcount;
             public int hookcount;

@@ -95,6 +95,9 @@ namespace cclua {
 		public static byte luaC_white (global_State g) { return (byte)(g.currentwhite & WHITEBITS); }
 
 
+        public static void luaC_checkGC (lua_State L) { }
+
+
 
         public static void luaC_barrier (lua_State L, GCObject p, TValue v) {
         }

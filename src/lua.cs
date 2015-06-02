@@ -7,6 +7,10 @@ namespace cclua {
 		public static long LUA_VERSION_NUM = 503;
 
 
+        /* option for multiple returns in 'lua_pcall' and 'lua_call' */
+        public const int LUA_MULTRET = -1;
+
+
         /*
         ** pseudo-indices
         */
@@ -59,8 +63,36 @@ namespace cclua {
         /* Functions to be called by the debugger in specific events */
         public delegate void lua_Hook (lua_State L, lua_Debug ar);
 
+
+        /*
+        ** {======================================================================
+        ** Debug API
+        ** =======================================================================
+        */
+
+
+        /*
+        ** Event codes
+        */
+        public const int LUA_HOOKCALL = 0;
+        public const int LUA_HOOKRET = 1;
+        public const int LUA_HOOKLINE = 2;
+        public const int LUA_HOOKCOUNT = 3;
+        public const int LUA_HOOKTAILCALL = 4;
+
+
+        /*
+        ** Event masks
+        */
+        public const int LUA_MASKCALL = 1 << LUA_HOOKCALL;
+        public const int LUA_MASKRET = 1 << LUA_HOOKRET;
+        public const int LUA_MASKLINE = 1 << LUA_HOOKLINE;
+        public const int LUA_MASKCOUNT = 1 << LUA_HOOKCOUNT;
+
+
+
         public class lua_Debug {
-            public int devent;
+            public int ev;
             public string name;  /* (n) */
             public string namewhat;  /* (n) 'global', 'local', 'field', 'method' */
             public string what;  /* (S) 'Lua', 'C', 'main', 'tail' */

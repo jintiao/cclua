@@ -26,6 +26,13 @@ namespace cclua {
 
 
         /*
+        ** maximum depth for nested C calls and syntactical nested non-terminals
+        ** in a program. (Value must fit in an unsigned short int.)
+        */
+        public const int LUAI_MAXCCALLS = 200;
+
+
+        /*
         ** maximum number of upvalues in a closure (both C and Lua). (Value
         ** must fit in an unsigned char.)
         */
@@ -37,35 +44,24 @@ namespace cclua {
 
 
 
-        public static void lua_lock (lua_State L) {
-        }
+        public static void lua_lock (lua_State L) { }
 
-        public static void lua_unlock (lua_State L) {
-        }
+        public static void lua_unlock (lua_State L) { }
 
-        public static void api_check (bool e, object msg) {
-        }
+        public static void api_check (bool e, object msg) { }
 
-        public static void lua_assert (object x) {
-        }
+        public static void lua_assert (object x) { }
 
-		public static T check_exp<T> (bool c, object e) {
-			lua_assert (c);
-			return (T)e;
-		}
+		public static T check_exp<T> (bool c, object e) { lua_assert (c); return (T)e; }
 
-		public static void lua_longassert (bool c) {
-			if (c == false)
-				lua_assert (0);
-		}
+		public static void lua_longassert (bool c) { if (c == false) lua_assert (0); }
 
-        public static void lua_writestringerror (string fmt, params object[] args) {
-        }
+        public static void lua_writestringerror (string fmt, params object[] args) { }
 
-		public static void luai_userstateopen (lua_State L) {
-		}
+		public static void luai_userstateopen (lua_State L) { }
 
-		public static void luai_userstateclose (lua_State L) {
-		}
+		public static void luai_userstateclose (lua_State L) { }
+
+        public static void condmovestack (lua_State L) { }
     }
 }
