@@ -58,9 +58,146 @@ namespace cclua {
             public const int PAUSEADJ = 100;
 
 
+			/*
+			** 'makewhite' erases all color bits then sets only the current white
+			** bit
+			*/
+			public const int maskcolors = (~(bitmask(BLACKBIT) | WHITEBITS));
 
-			public static void luaC_barrierback_ (lua_State L, Table t) {
+			public static void makewhite (global_State g, GCObject x) {
+				x.marked = (byte)((x.marked & maskcolors) | luaC_white (g));
 			}
+
+			public static void white2gray (GCObject x) { resetbits (x.marked, WHITEBITS); }
+			public static void black2gray (GCObject x) { resetbit (x.marked, BLACKBIT); }
+
+
+			public static bool valiswhite (TValue x) { return (iscollectable (x) && iswhite (gcvalue (x))); }
+
+			public static void checkdeadkey (Node n) { lua_assert (ttisdeadkey (n.i_key.tvk) == false || ttisnil (n.i_val)); }
+
+
+			public static void checkconsistency (TValue obj) { lua_longassert (iscollectable (obj) == false || righttt (obj)); }
+
+
+			public static void markvalue (global_State g, TValue o) {
+				checkconsistency (o);
+				if (valiswhite (o)) reallymarkobject (g, gcvalue (o));
+			}
+
+			public static void markobject (global_State g, GCObject t) {
+				if (t != null && iswhite (t)) reallymarkobject (g, obj2gco (t));
+			}
+
+
+
+			/*
+			** {======================================================
+			** Generic functions
+			** =======================================================
+			*/
+
+
+
+
+			/*
+			** if key is not marked, mark its entry as dead (therefore removing it
+			** from the table)
+			*/
+			public static void removeentry (Node n) {
+				lua_assert (ttisnil (n.i_val));
+				if (valiswhite (n.i_key.tvk))
+					setdeadvalue (n.i_key.tvk);  /* unused and unmarked key; remove it */
+			}
+
+
+			/*
+			** tells whether a key or value can be cleared from a weak
+			** table. Non-collectable objects are never removed from weak
+			** tables. Strings behave as 'values', so are never removed too. for
+			** other objects: if really collected, cannot keep them; for objects
+			** being finalized, keep them in keys, but not in values
+			*/
+			public static bool iscleared (global_State g, TValue o) {
+				if (iscollectable (o) == false) return false;
+				else if (ttisstring (o)) {
+					markobject (g, tsvalue (o));  /* strings are 'values', so are never weak */
+					return false;
+				}
+				else return iswhite (gcvalue (o));
+			}
+
+
+			/*
+			** barrier that moves collector forward, that is, mark the white object
+			** being pointed by a black object. (If in sweep phase, clear the black
+			** object to white [sweep it] to avoid other barrier calls for this
+			** same object.)
+			*/
+			public static void luaC_barrier_ (lua_State L, GCObject o, GCObject v) {
+				global_State g = G (L);
+				lua_assert (isblack (o) && iswhite (v) && isdead (g, v) == false && isdead (g, o) == false);
+				if (keepinvariant (g))  /* must keep invariant? */
+					reallymarkobject (g, v);  /* restore invariant */
+				else {  /* sweep phase */
+					lua_assert (issweepphase (g));
+					makewhite (g, o);  /* mark main obj. as white to avoid other barriers */
+				}
+			}
+
+
+			/*
+			** barrier that moves collector backward, that is, mark the black object
+			** pointing to a white object as gray again.
+			*/
+			public static void luaC_barrierback_ (lua_State L, Table t) {
+				global_State g = G (L);
+				lua_assert (isblack (t) && isdead (g, t) == false);
+				black2gray (t);  /* make table gray (again) */
+				t.gclist = g.grayagain;
+				g.grayagain = obj2gco (t);
+			}
+
+
+			/*
+			** barrier for assignments to closed upvalues. Because upvalues are
+			** shared among closures, it is impossible to know the color of all
+			** closures pointing to it. So, we assume that the object being assigned
+			** must be marked.
+			*/
+			public static void luaC_upvalbarrier_ (lua_State L, UpVal uv) {
+				global_State g = G (L);
+				GCObject o = gcvalue (uv.v);
+				lua_assert (upisopen (uv) == false);  /* ensured by macro luaC_upvalbarrier */
+				if (keepinvariant (g))
+					markobject (g, o);
+			}
+
+
+
+			/*
+			** {======================================================
+			** Mark functions
+			** =======================================================
+			*/
+
+
+			/*
+			** mark an object. Userdata, strings, and closed upvalues are visited
+			** and turned black here. Other objects are marked gray and added
+			** to appropriate list to be visited (and turned black) later. (Open
+			** upvalues are already linked in 'headuv' list.)
+			*/
+
+
+			public static void reallymarkobject (global_State g, GCObject o) {
+			}
+
+
+
+
+
+
 
 
             /*
@@ -79,7 +216,41 @@ namespace cclua {
                 luaE_setdebt (g, debt);
             }
 
+			
+			/*
+			** Enter first sweep phase.
+			** The call to 'sweeptolive' makes pointer point to an object inside
+			** the list (instead of to the header), so that the real sweep do not
+			** need to skip objects created between "now" and the start of the real
+			** sweep.
+			** Returns how many objects it swept.
+			*/
+			public static int entersweep (lua_State L) {
+				global_State g = G (L);
+				g.gcstate = GCSswpallgc;
+				lua_assert (g.sweepgc == null);
+				int n = 0;
+				g.sweepgc = sweeptolive (L, g.allgc, ref n);
+				return n;
+			}
 
+
+			public static void atomic (lua_State L) {
+			}
+
+
+			public static void sweepstep (lua_State L, global_State g, int nextstate, GCObject nextlist) {
+				if (g.sweepgc != 0) {
+					long olddebt = g.GCdebt;
+					g.sweepgc = sweeplist (L, g.sweepgc, GCSWEEPMAX);
+					g.GCestimate += g.GCdebt - olddebt;  /* update estimate */
+					if (g.sweepgc != null)  /* is there still something to sweep? */
+						return (GCSWEEPMAX * GCSWEEPCOST);
+				}
+				/* else enter next state */
+				g.gcstate = nextstate;
+				g.sweepgc = nextlist;
+			}
 
 
             public static long singlestep (lua_State L) {
@@ -252,20 +423,91 @@ namespace cclua {
 
 
 
-        public static T luaC_newobj<T> (lua_State L, int tt) where T : GCObject, new () {
-            T o = luaM_newobject<T> (L);
-            o.tt = (byte)tt;
-            return o;
-        }
-
 		public static void luaC_fix (lua_State L, GCObject o) {
 			global_State g = G (L);
-			o.next = g.fixedgc;
+			lua_assert (g.allgc == o);  /* object must be 1st in 'allgc' list! */
+			lgc.white2gray (o);  /* they will be gray forever */
+			g.allgc = o.next;  /* remove object from 'allgc' list */
+			o.next = g.fixedgc;  /* link it to 'fixedgc' list */
 			g.fixedgc = o;
 		}
 
 
+		/*
+		** create a new collectable object (with given type and size) and link
+		** it to 'allgc' list.
+		*/
+		public static T luaC_newobj<T> (lua_State L, int tt) where T : GCObject, new () {
+			global_State g = G (L);
+			T o = luaM_newobject<T> (L);
+			o.marked = luaC_white (g);
+			o.tt = (byte)tt;
+			o.next = g.allgc;
+			g.allgc = o;
+			return o;
+		}
+
+
+
+
+
+		/*
+		** if object 'o' has a finalizer, remove it from 'allgc' list (must
+		** search the list to find it) and link it in 'finobj' list.
+		*/
+		public static void luaC_checkfinalizer (lua_State L, GCObject o, Table mt) {
+			global_State g = G (L);
+			if (tofinalize (o) ||  /* obj. is already marked... */
+			    gfasttm (g, mt, TMS.TM_GC) == null)  /* or has no finalizer? */
+				return;  /* nothing to be done */
+			else {  /* move 'o' to 'finobj' list */
+				if (issweepphase (g)) {
+					makewhite (g, o);  /* "sweep" object 'o' */
+					if (g.sweepgc == o.next)  /* should not remove 'sweepgc' object */
+						g.sweepgc = sweeptolive (L, g.sweepgc, null);  /* change 'sweepgc' */
+				}
+				/* search for pointer pointing to 'o' */
+				for (GCObject p = g.allgc; p != o; p = p.next) { /* empty */ }
+				p = o.next;  /* remove 'o' from 'allgc' list */
+				o.next = g.finobj;  /* link it in 'finobj' list */
+				g.finobj = o;
+				l_setbit (o.marked, FINALIZEDBIT);  /* mark it as such */
+			}
+		}
+
+
+
+		/*
+		** {======================================================
+		** GC control
+		** =======================================================
+		*/
+
+
+
 		public static void luaC_freeallobjects (lua_State L) {
+			global_State g = G (L);
+			separatetobefnz (g, 1);  /* separate all objects with finalizers */
+			lua_assert (g.finobj == null);
+			callallpendingfinalizers (L, 0);
+			lua_assert (g.tobefnz == null);
+			g.currentwhite = WHITEBITS;  /* this "white" makes all objects look dead */
+			g.gckind = KGC_NORMAL;
+			sweepwholelist (L, g.finobj);
+			sweepwholelist (L, g.allgc);
+			sweepwholelist (L, g.fixedgc);  /* collect fixed objects */
+			lua_assert (g.strt.size == 0);
+		}
+
+
+		/*
+		** advances the garbage collector until it reaches a state allowed
+		** by 'statemask'
+		*/
+		public static void luaC_runtilstate (lua_State L, int statesmask) {
+			global_State g = G (L);
+			while (testbit (statesmask, g.gcstate) == false)
+				lgc.singlestep (L);
 		}
 
 
@@ -291,6 +533,34 @@ namespace cclua {
                 lgc.runafewfinalizers (L);
             }
         }
+
+
+		/*
+		** Performs a full GC cycle; if 'isemergency', set a flag to avoid
+		** some operations which could change the interpreter state in some
+		** unexpected ways (running finalizers and shrinking some structures).
+		** Before running the collection, check 'keepinvariant'; if it is true,
+		** there may be some objects marked as black, so the collector has
+		** to sweep all objects to turn them back to white (as white has not
+		** changed, nothing will be collected).
+		*/
+		public static void luaC_fullgc (lua_State L, bool isemergency) {
+			global_State g = G (L);
+			lua_assert (g.gckind == KGC_NORMAL);
+			if (isemergency) g.gckind = KGC_EMERGENCY;  /* set flag */
+			if (keepinvariant (g)) {  /* black objects? */
+				entersweep (L);  /* sweep everything to turn them back to white */
+			}
+			/* finish any pending sweep phase to start a new cycle */
+			luaC_runtilstate (L, bitmask(GCSpause));
+			luaC_runtilstate (L, ~bitmask(GCSpause));  /* start new collection */
+			luaC_runtilstate (L, bitmask(GCScallfin));  /* run up to finalizers */
+			/* estimate must be correct after a full GC cycle */
+			lua_assert (g.GCestimate == gettotalbytes (g));
+			luaC_runtilstate(L, bitmask(GCSpause));  /* finish collection */
+			g.gckind = KGC_NORMAL;
+			setpause (g);
+		}
 
 
 
