@@ -44,14 +44,13 @@ namespace cclua {
             ** mode == 1: takes the floor of the number
             ** mode == 2: takes the ceil of the number
             */
-            public static int tointeger_aux (TValue obj, ref long p, int mode) {
-                TValue v = luaM_newobject<TValue> (null);
+            public static bool tointeger_aux (TValue obj, ref long p, int mode) {
                 while (true) {
                     if (ttisfloat (obj)) {
                         double n = fltvalue (obj);
                         double f = l_floor (n);
                         if (n != f) {  /* not an integral value? */
-                            if (mode == 0) return 0;  /* fails if mode demands integral value */
+                            if (mode == 0) return false;  /* fails if mode demands integral value */
                             else if (mode > 1)  /* needs ceil? */
                                 f += 1;  /* convert floor to ceil (remember: n != f) */
                         }
@@ -59,13 +58,18 @@ namespace cclua {
                     }
                     else if (ttisinteger (obj)) {
                         p = ivalue (obj);
-                        return 1;
+                        return true;
                     }
                     else {
-                        if (cvt2num (obj) && luaO_str2num (svalue (obj), v) == tsvalue (obj).len + 1)
-                            tvcopy (obj, v);  /* convert result from 'luaO_str2num' to an integer */
+                        if (cvt2num (obj)) {
+                            TValue v = new TValue ();
+                            if (luaO_str2num (svalue (obj), v) == tsvalue (obj).len)
+                                tvcopy (obj, v);  /* convert result from 'luaO_str2num' to an integer */
+                            else
+                                return false;  /* conversion failed */
+                        }
                         else
-                            return 0;  /* conversion failed */
+                            return false;  /* conversion failed */
                     }
                 }
             }
@@ -83,22 +87,42 @@ namespace cclua {
             }
 
 
-			/* number of bits in an integer */ 
+			/* number of bits in an integer */  
 			public const int NBITS = sizeof (long) * CHAR_BIT;
 
+            /* macro used by 'luaV_concat' to ensure that element at 'o' is a string */
+            public static bool tostring (lua_State L, TValue o) {
+                if (ttisstring (o)) return true;
+                if (cvt2str (o)) {
+                    luaO_tostring (L, o);
+                    return true;
+                }
+                return false;
+            }
+            public static bool tostring (lua_State L, int o) { return tostring (L, L.stack[o]); }
+
+
+            public static void memcpy (byte[] dest, int offset, byte[] src, int len) {
+                for (int i = 0; i < len; i++)
+                    dest[offset + i] = src[i];
+            }
 
         }
 
 
 
-        public static bool cvt2str (TValue o) { return false; }  /* no conversion from numbers to strings */
-        public static bool cvt2num (TValue o) { return false; }  /* no conversion from strings to numbers */
+        public static bool cvt2str (TValue o) { return ttisnumber (o); }
+        public static bool cvt2str (lua_State L, int o) { return cvt2str(L.stack[o]); }
 
 
-        public static int tonumber (TValue o, ref double n) {
+        public static bool cvt2num (TValue o) { return ttisstring (o); }
+        public static bool cvt2num (lua_State L, int o) { return cvt2num (L.stack[o]); }
+
+
+        public static bool tonumber (TValue o, ref double n) {
             if (ttisfloat (o)) {
                 n = fltvalue (o);
-                return 1;
+                return true;
             }
             else {
                 return luaV_tonumber_ (o, ref n);
@@ -106,10 +130,10 @@ namespace cclua {
         }
 
 
-        public static int tointeger (TValue o, ref long n) {
+        public static bool tointeger (TValue o, ref long n) {
             if (ttisinteger (o)) {
                 n = ivalue (o);
-                return 1;
+                return true;
             }
             else {
                 return luaV_tointeger_ (o, ref n);
@@ -124,25 +148,25 @@ namespace cclua {
         ** Try to convert a value to a float. The float case is already handled
         ** by the macro 'tonumber'.
         */
-        public static int luaV_tonumber_ (TValue obj, ref double n) {
+        public static bool luaV_tonumber_ (TValue obj, ref double n) {
             TValue v = luaM_newobject<TValue> (null);
             if (ttisinteger (obj)) {
                 n = ivalue (obj);
-                return 1;
+                return true;
             }
             else if (cvt2num (obj) &&
                         luaO_str2num (svalue (obj), v) == tsvalue (obj).len + 1) {
                 n = nvalue (v);  /* convert result of 'luaO_str2num' to a float */
-                return 1;
+                return true;
             }
-            return 0;  /* conversion failed */
+            return false;  /* conversion failed */
         }
 
 
         /*
         ** try to convert a value to an integer
         */
-        public static int luaV_tointeger_ (TValue obj, ref long p) {
+        public static bool luaV_tointeger_ (TValue obj, ref long p) {
             return lvm.tointeger_aux (obj, ref p, lvm.LUA_FLOORN2I);
         }
 
@@ -303,12 +327,12 @@ namespace cclua {
             case lua530.LUA_TNIL: return true;
             case LUA_TNUMINT: return (ivalue (t1) == ivalue (t2));
 			case LUA_TNUMFLT: return luai_numeq (fltvalue (t1), fltvalue (t2));
-			case LUA_TBOOLEAN: return (bvalue (t1) == bvalue (t2));  /* true must be 1 !! */
-			case LUA_TLIGHTUSERDATA: return (pvalue (t1) == pvalue (t2));
+			case lua530.LUA_TBOOLEAN: return (bvalue (t1) == bvalue (t2));  /* true must be 1 !! */
+            case lua530.LUA_TLIGHTUSERDATA: return (pvalue (t1) == pvalue (t2));
 			case LUA_TLCF: return (fvalue (t1) == fvalue (t2));
 			case LUA_TSHRSTR: return eqshrstr (tsvalue (t1), tsvalue (t2));
 			case LUA_TLNGSTR: return luaS_eqlngstr (tsvalue (t1), tsvalue (t2));
-			case LUA_TUSERDATA: {
+            case lua530.LUA_TUSERDATA: {
 				if (uvalue (t1) == uvalue (t2)) return true;
 				else if (L == null) return false;
 				tm = fasttm (L, uvalue (t1).metatable, TMS.TM_EQ);
@@ -316,7 +340,7 @@ namespace cclua {
 					tm = fasttm (L, uvalue (t2).metatable, TMS.TM_EQ);
 				break;  /* will try TM */
 			}
-			case LUA_TTABLE: {
+            case lua530.LUA_TTABLE: {
 				if (hvalue (t1) == hvalue (t2)) return true;
 				else if (L == null) return false;
 				tm = fasttm (L, hvalue (t1).metatable, TMS.TM_EQ);
@@ -328,7 +352,7 @@ namespace cclua {
                 return (gcvalue (t1) == gcvalue (t2));
             }
 			luaT_callTM (L, tm, t1, t2, L.top, 1);  /* call TM */
-			return (l_isfalse (L.top) == false);
+			return (l_isfalse (L, L.top) == false);
         }
         
         
@@ -341,19 +365,20 @@ namespace cclua {
 			do {
 				int top = L.top;
 				int n = 2;  /* number of elements handled in this pass (at least 2) */
-				if ((ttisstring (top - 2) || cvt2str (top - 2)) == false || tostring (top - 1) == false)
+                if ((ttisstring (L, top - 2) || cvt2str (L, top - 2)) == false || lvm.tostring (L, top - 1) == false)
 					luaT_trybinTM (L, top - 2, top - 1, top - 2, TMS.TM_CONCAT);
-				else if (tsvalue (top - 1).len == 0)  /* second operand is empty? */
-					tostring (top - 2);
-				else if (ttisstring (top - 2) && tsvalue (top - 2).len == 0) {
+                else if (tsvalue (L, top - 1).len == 0)  /* second operand is empty? */
+                    lvm.tostring (L, top - 2);
+                else if (ttisstring (L, top - 2) && tsvalue (L, top - 2).len == 0) {
 					setobjs2s (L, top - 2, top - 1);  /* result is second op. */
 				}
 				else {
 					/* at least two non-empty string values; get as many as possible */
-					int tl = tsvalue (top - 1).len;
+                    int tl = tsvalue (L, top - 1).len;
 					/* collect total length */
-					for (int i = 1; i < total && tostring (L, top - i - 1); i++) {
-						int l = tsvalue (top - i - 1).len;
+                    int i = 1;
+                    for (; i < total && lvm.tostring (L, top - i - 1); i++) {
+                        int l = tsvalue (L, top - i - 1).len;
 						if (l >= MAX_SIZE - tl)
 							luaG_runerror (L, "string length overflow");
 						tl += l;
@@ -362,8 +387,8 @@ namespace cclua {
 					tl = 0;
 					n = i;
 					do {  /* copy all strings to buffer */
-						l = tsvalue (top - i).len;
-						memcpy (buffer, tl, svalue (top - i), l);
+                        int l = tsvalue (L, top - i).len;
+                        lvm.memcpy (buffer, tl, svalue (L, top - i), l);
 						tl += l;
 					} while (--i > 0);
 					setsvalue2s (L, top - n, luaS_newlstr (L, buffer, tl));  /* create result */
@@ -380,15 +405,15 @@ namespace cclua {
 		public static void luaV_objlen (lua_State L, int ra, TValue rb) {
 			TValue tm;
 			switch (ttnov (rb)) {
-			case LUA_TTABLE:{
+                case lua530.LUA_TTABLE: {
 				Table h = hvalue (rb);
 				tm = fasttm (L, h, TMS.TM_LEN);
 				if (tm != null) break;  /* metamethod? break switch to call it */
-				setivalue (ra, luaH_getn (h));  /* else primitive len */
+				setivalue (L, ra, luaH_getn (h));  /* else primitive len */
 				return;
 			}
-			case LUA_TSTRING: {
-				setivalue (ra, tsvalue (rb).len);
+                case lua530.LUA_TSTRING: {
+				setivalue (L, ra, tsvalue (rb).len);
 				return;
 			}
 			default: {  /* try metamethod */
@@ -446,13 +471,13 @@ namespace cclua {
 		/*
 		** Shift left operation. (Shift right just negates 'y'.)
 		*/
-		public static long luaV_shiftl (long x, long y) {
+        public static int luaV_shiftl (int x, int y) {
 			if (y < 0) {  /* shift right? */
-				if (y <= NBITS) return 0;
-				else return (x >> (-y));
+				if (y <= lvm.NBITS) return 0;
+                else return (x >> (-y));
 			}
 			else {  /* shift left */
-				if (y >= NBITS) return 0;
+                if (y >= lvm.NBITS) return 0;
 				else return (x << y);
 			}
 		}

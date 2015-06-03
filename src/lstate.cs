@@ -259,6 +259,21 @@ namespace cclua {
 		public static global_State G (lua_State L) { return L.l_G; }
 
 
+        /* macros to convert a GCObject into a specific value */
+        public static TString gco2ts (GCObject o) { return check_exp<TString> (novariant (o.tt) < lua530.LUA_TSTRING, o); }
+        public static Udata gco2u (GCObject o) { return check_exp<Udata> (novariant (o.tt) < lua530.LUA_TUSERDATA, o); }
+        public static LClosure gco2lcl (GCObject o) { return check_exp<LClosure> (novariant (o.tt) < LUA_TLCL, o); }
+        public static CClosure gco2ccl (GCObject o) { return check_exp<CClosure> (novariant (o.tt) < LUA_TCCL, o); }
+        public static Udata gco2cl (GCObject o) { return check_exp<Udata> (novariant (o.tt) < lua530.LUA_TFUNCTION, o); }
+        public static Table gco2t (GCObject o) { return check_exp<Table> (novariant (o.tt) < lua530.LUA_TTABLE, o); }
+        public static Proto gco2p (GCObject o) { return check_exp<Proto> (novariant (o.tt) < LUA_TPROTO, o); }
+        public static lua_State gco2th (GCObject o) { return check_exp<lua_State> (novariant (o.tt) < lua530.LUA_TTHREAD, o); }
+
+
+        /* macro to convert a Lua object into a GCObject */
+        public static GCObject obj2gco (GCObject v) { return check_exp<GCObject> (novariant (v.tt) < LUA_TDEADKEY, v); }
+
+
         /*
         ** Compute an initial seed as random as possible. Rely on Address Space
         ** Layout Randomization (if present) to increase randomness..

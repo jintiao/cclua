@@ -15,8 +15,8 @@ namespace cclua {
             */
             public const int LUAI_HASHLIMIT = 5;
 
-			public static bool memcmp (byte[] a1, byte[] a2) {
-				for (int i = 0; i < a1.Length; i++) {
+			public static bool memcmp (byte[] a1, byte[] a2, int l) {
+				for (int i = 0; i < l; i++) {
 					if (a1[i] != a2[i])
 						return false;
 				}
@@ -26,9 +26,9 @@ namespace cclua {
             /*
             ** creates a new string object
             */
-            public static TString createstrobj (lua_State L, byte[] str, int tag, uint h) {
+            public static TString createstrobj (lua_State L, byte[] str, int l, int tag, uint h) {
                 TString ts = luaC_newobj<TString> (L, tag);
-                ts.len = str.Length;
+                ts.len = l;
                 ts.hash = h;
                 ts.extra = 0;
                 ts.data = str;
@@ -38,14 +38,14 @@ namespace cclua {
 			/*
 			** checks whether short string exists and reuses it or creates a new one
 			*/
-			public static TString internshrstr (lua_State L, byte[] str) {
+			public static TString internshrstr (lua_State L, byte[] str, int l) {
 				global_State g = G (L);
-				uint h = luaS_hash (str, str.Length, g.seed);
+				uint h = luaS_hash (str, l, g.seed);
                 long mod = lmod (h, g.strt.size);
                 TString list = g.strt.hash[mod];
 				TString ts = list;
 				for (; ts != null; ts = ts.hnext) {
-					if (memcmp (str, ts.data) == true) {
+					if (l == ts.len && memcmp (str, ts.data, l) == true) {
 						/* found! */
 						if (isdead (g, ts))  /* dead (but not collected yet)? */
 							changewhite (ts);  /* resurrect it */
@@ -57,7 +57,7 @@ namespace cclua {
                     mod = lmod (h, g.strt.size);
                     list = g.strt.hash[mod];  /* recompute with new size */
 				}
-				ts = createstrobj (L, str, LUA_TSHRSTR, h);
+				ts = createstrobj (L, str, l, LUA_TSHRSTR, h);
 				ts.hnext = list;
                 g.strt.hash[mod] = ts;
 				g.strt.nuse++;
@@ -66,9 +66,7 @@ namespace cclua {
 		}
 
 
-		public static TString luaS_newliteral (lua_State L, string str) {
-			return luaS_newlstr(L, Encoding.UTF8.GetBytes (str));
-		}
+		public static TString luaS_newliteral (lua_State L, string str) { return luaS_new (L, str); }
 
 
 		/*
@@ -86,11 +84,11 @@ namespace cclua {
 		/*
 		** equality for long strings
 		*/
-		public static int luaS_eqlngstr (TString a, TString b) {
+		public static bool luaS_eqlngstr (TString a, TString b) {
 			lua_assert (a.tt == LUA_TLNGSTR && b.tt == LUA_TLNGSTR);
 			return ((a == b) ||  /* same instance or... */
 			        ((a.len == b.len) &&  /* equal length and ... */
-			 		lstring.memcmp (a.data, b.data)) ? 1 : 0);  /* equal contents */
+                    lstring.memcmp (a.data, b.data, a.len)));  /* equal contents */
 		}
 
 
@@ -159,13 +157,13 @@ namespace cclua {
 		/*
 		** new string (with explicit length)
 		*/
-		public static TString luaS_newlstr (lua_State L, byte[] str) {
+		public static TString luaS_newlstr (lua_State L, byte[] str, int len) {
 			if (str.Length <= LUAI_MAXSHORTLEN)  /* short string? */
-                return lstring.internshrstr (L, str);
+                return lstring.internshrstr (L, str, len);
 			else {
-				if ((str.Length + 1) > MAX_SIZE)
+                if ((len) > MAX_SIZE)
 					luaM_toobig (L);
-                return lstring.createstrobj (L, str, LUA_TLNGSTR, G (L).seed);
+                return lstring.createstrobj (L, str, len, LUA_TLNGSTR, G (L).seed);
 			}
 		}
 
@@ -173,7 +171,13 @@ namespace cclua {
 		** new zero-terminated string
 		*/
         public static TString luaS_new (lua_State L, string str) {
-			return luaS_newlstr(L, Encoding.UTF8.GetBytes (str));
+            byte[] buf = str2byte (str);
+            return luaS_newlstr (L, buf, buf.Length);
 		}
+
+
+        public static byte[] str2byte (string str) { return Encoding.UTF8.GetBytes (str); }
+        public static string byte2str (byte[] buf) { return Encoding.UTF8.GetString (buf); }
+        public static string byte2str (byte[] buf, int index, int count) { return Encoding.UTF8.GetString (buf, index, count); }
     }
 }

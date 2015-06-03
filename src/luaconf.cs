@@ -37,6 +37,12 @@ namespace cclua {
         public const long LUA_MININTEGER = Int64.MinValue;
 
 
+        public static string lua_integer2str (long i) { return i.ToString (); }
+
+
+        public static string lua_number2str (double i) { return i.ToString (); }
+
+
         /* these are quite standard operations */
         public static double luai_numadd (lua530.lua_State L, double a, double b) { return (a + b); }
         public static double luai_numsub (lua530.lua_State L, double a, double b) { return (a - b); }
@@ -62,12 +68,12 @@ namespace cclua {
         ** has an exact representation as a float; MAXINTEGER may not have one,
         ** and therefore its conversion to float may have an ill-defined value.)
         */
-        public static int lua_numbertointeger (double n, ref long p) {
+        public static bool lua_numbertointeger (double n, ref long p) {
             if (n >= (double)imp.LUA_MININTEGER && n < (-((double)imp.LUA_MININTEGER))) {
                 p = (long)n;
-                return 1;
+                return true;
             }
-            return 0;
+            return false;
         }
     }
 }

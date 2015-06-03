@@ -11,9 +11,6 @@ namespace cclua {
             /* test whether thread is in 'twups' list */
             public static bool isintwups (lua_State L) { return (L.twups != L); }
 
-
-            public static bool upisopen (UpVal up) { return (up.v != up.u.value); }
-
         }
 
         /*
@@ -43,6 +40,9 @@ namespace cclua {
                 u = new uc ();
             }
         }
+
+
+        public static bool upisopen (UpVal up) { return (up.v != up.u.value); }
 
 
 
@@ -83,7 +83,7 @@ namespace cclua {
             lua_assert (lfunc.isintwups (L) || L.openupval == null);
             while (pp != null && pp.level >= level) {
                 p = pp;
-                lua_assert (lfunc.upisopen (p));
+                lua_assert (upisopen (p));
                 if (p.level == level)  /* found a corresponding upvalue? */
                     return p;  /* return it */
                 pp = p.u.open.next;
@@ -108,7 +108,7 @@ namespace cclua {
         public static void luaF_close (lua_State L, int level) {
             while (L.openupval != null && L.openupval.level >= level) {
                 UpVal uv = L.openupval;
-                lua_assert (lfunc.upisopen (uv));
+                lua_assert (upisopen (uv));
                 L.openupval = uv.u.open.next;  /* remove from 'open' list */
                 if (uv.refcount == 0)  /* no references? */
                     luaM_free (L, uv);  /* free upvalue */

@@ -49,6 +49,7 @@
     <Compile Include="src\lbitlib.cs" />
     <Compile Include="src\lcode.cs" />
     <Compile Include="src\lcorolib.cs" />
+    <Compile Include="src\lctype.cs" />
     <Compile Include="src\ldblib.cs" />
     <Compile Include="src\ldebug.cs" />
     <Compile Include="src\ldo.cs" />

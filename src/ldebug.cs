@@ -17,6 +17,20 @@ namespace cclua {
             // TODO
         }
 
+
+        public static void luaG_concaterror (lua_State L, TValue p1, TValue p2) {
+            // TODO
+        }
+
+
+        public static void luaG_opinterror (lua_State L, TValue p1, TValue p2, string msg) {
+            // TODO
+        }
+
+        public static void luaG_tointerror (lua_State L, TValue p1, TValue p2) {
+        }
+
+
         public static void luaG_ordererror (lua_State L, TValue p1, TValue p2) {
         }
     }

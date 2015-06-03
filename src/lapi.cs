@@ -228,7 +228,7 @@ namespace cclua {
         public static int lua_isnumber (lua_State L, int idx) {
             TValue o = imp.index2addr (L, idx);
             double n = 0;
-            return imp.tonumber (o, ref n);
+            return (imp.tonumber (o, ref n) ? 1 : 0);
         }
 
 

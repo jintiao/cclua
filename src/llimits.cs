@@ -8,13 +8,19 @@ namespace cclua {
 
         public const int DBL_MAX_EXP = 1024;
 
-        public const int MAX_INT = Int32.MaxValue;
-
         /* maximum value for size_t */
         public const long MAX_SIZET = MAX_INT;
 
         /* maximum size visible for Lua (must be representable in a lua_Integer */
         public const long MAX_SIZE = MAX_INT;
+
+
+        public const ulong MAX_LUMEM = (ulong)(~((ulong)0));
+
+        public const long MAX_LMEM = (long)(MAX_LUMEM >> 1);
+
+
+        public const int MAX_INT = Int32.MaxValue;  /* maximum value of an int */
 
 
         /*
@@ -42,6 +48,9 @@ namespace cclua {
         /* minimum size for the string table (must be power of 2) */
         public const int MINSTRTABSIZE = 64;  /* minimum size for "predefined" strings */
 
+
+        /* minimum size for string buffer */
+        public const int LUA_MINBUFFER = 32;
 
 
         public static void lua_lock (lua_State L) { }

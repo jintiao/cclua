@@ -142,6 +142,24 @@ namespace cclua {
         }
 
 
+        public static void luaT_trybinTM (lua_State L, TValue p1, TValue p2, int res, TMS ev) {
+            if (luaT_callbinTM (L, p1, p2, res, ev) == false) {
+                if (ev == TMS.TM_CONCAT)
+                    luaG_concaterror (L, p1, p2);
+                else if (ev == TMS.TM_BAND || ev == TMS.TM_BOR || ev == TMS.TM_BXOR || ev == TMS.TM_SHL || ev == TMS.TM_SHR || ev == TMS.TM_BNOT) {
+                    double dummy = 0;
+                    if (tonumber (p1, ref dummy) && tonumber (p2, ref dummy))
+                        luaG_tointerror (L, p1, p2);
+                    else
+                        luaG_opinterror (L, p1, p2, "perform bitwise operation on");
+                }
+                else
+                    luaG_opinterror (L, p1, p2, "perform arithmetic on");
+            }
+        }
+        public static void luaT_trybinTM (lua_State L, int p1, int p2, int res, TMS ev) { luaT_trybinTM (L, L.stack[p1], L.stack[p2], res, ev); }
+
+
         public static int luaT_callorderTM (lua_State L, TValue p1, TValue p2, TMS ev) {
             if (luaT_callbinTM (L, p1, p2, L.top, ev) == false)
                 return -1;  /* no metamethod */

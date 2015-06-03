@@ -25,7 +25,6 @@ namespace cclua {
             ** Maximum size of array part (MAXASIZE) is 2^MAXABITS. MAXABITS is
             ** the largest integer such that MAXASIZE fits in an unsigned int.
             */
-            public const int CHAR_BIT = 8;
             public const int MAXABITS = sizeof (int) * CHAR_BIT - 1;
             public const long MAXASIZE = (1 << MAXABITS);
 
@@ -62,7 +61,7 @@ namespace cclua {
             */
             public static bool numisinteger (double x, ref long p) {
                 if (x == l_floor (x))  /* integral value? */
-                    return (lua530.lua_numbertointeger (x, ref p) != 0);  /* try as an integer */
+                    return lua530.lua_numbertointeger (x, ref p);  /* try as an integer */
                 else return false;
             }
 
@@ -366,6 +365,9 @@ namespace cclua {
                 return (int)i;
 			}
         }
+
+
+        public const int CHAR_BIT = 8;
 
 
         public static void invalidateTMcache (Table t) { t.flags = 0; }
