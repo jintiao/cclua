@@ -71,6 +71,8 @@ namespace cclua {
 
 		public static void luai_userstateclose (lua_State L) { }
 
+        public static void luai_userstatefree (lua_State L, lua_State L1) { }
+
         public static void condmovestack (lua_State L) { }
 
 		public static void condchangemem (lua_State L) { condmovestack (L); }

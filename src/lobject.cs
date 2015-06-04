@@ -267,8 +267,8 @@ namespace cclua {
         public static void setbvalue (TValue obj, long x) { obj.value_.o = x; settt_ (obj, lua530.LUA_TBOOLEAN); }
         public static void setbvalue (lua_State L, int o, long t) { setbvalue (L.stack[o], t); }
 
-        public static void setgcovalue (TValue obj, GCObject x) { obj.value_.o = x; settt_ (obj, ctb (x.tt)); }
-        public static void setgcovalue (lua_State L, int o, GCObject t) { setgcovalue (L.stack[o], t); }
+        public static void setgcovalue (lua_State L, TValue obj, GCObject x) { obj.value_.o = x; settt_ (obj, ctb (x.tt)); }
+        public static void setgcovalue (lua_State L, int o, GCObject t) { setgcovalue (L, L.stack[o], t); }
 		
 		public static void setsvalue (lua_State L, TValue obj, TString x) { 
 			obj.value_.o = x; settt_ (obj, ctb (x.tt)); 
@@ -467,9 +467,9 @@ namespace cclua {
 		** Description of an upvalue for function prototypes
 		*/
 		public class Upvaldesc {
-			TString name;  /* upvalue name (for debug information) */
-			byte instack;  /* whether it is in stack */
-			byte idx;  /* index of upvalue (in stack or in outer function's list) */
+            public TString name;  /* upvalue name (for debug information) */
+            public byte instack;  /* whether it is in stack */
+            public byte idx;  /* index of upvalue (in stack or in outer function's list) */
 		}
 
 
@@ -478,9 +478,9 @@ namespace cclua {
 		** (used for debug information)
 		*/
 		public class LocVar {
-			TString varname;
-			int startpc;  /* first point where variable is active */
-			int endpc;  /* first point where variable is dead */
+            public TString varname;
+            public int startpc;  /* first point where variable is active */
+            public int endpc;  /* first point where variable is dead */
 		}
 
 
@@ -499,12 +499,12 @@ namespace cclua {
 			public int sizelocvars;
 			public int linedefined;
 			public int lastlinedefined;
-			public TValue k;  /* constants used by the function */
+			public TValue[] k;  /* constants used by the function */
 			public int code;
 			public Proto[] p;  /* functions defined inside the function */
 			public int lineinfo;  /* map from opcodes to source lines (debug information) */
-			public LocVar locvars;  /* information about local variables (debug information) */
-			public Upvaldesc upvalues;  /* upvalue information */
+			public LocVar[] locvars;  /* information about local variables (debug information) */
+			public Upvaldesc[] upvalues;  /* upvalue information */
 			public LClosure cache;  /* last created closure with this prototype */
 			public TString source;  /* used for debug information */
 			public GCObject gclist;
@@ -704,6 +704,11 @@ namespace cclua {
 		}
         public static void luaO_tostring (lua_State L, int obj) {
             luaO_tostring (L, L.stack[obj]);
+        }
+
+
+        public static string luaO_pushfstring (lua_State L, string fmt, params object[] args) {
+            return fmt;
         }
 
 

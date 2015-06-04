@@ -6,12 +6,9 @@ namespace cclua {
 
     public static partial class imp {
 
-        private static class lfunc {
 
-            /* test whether thread is in 'twups' list */
-            public static bool isintwups (lua_State L) { return (L.twups != L); }
-
-        }
+        /* test whether thread is in 'twups' list */
+        public static bool isintwups (lua_State L) { return (L.twups != L); }
 
         /*
         ** Upvalues for Lua closures
@@ -80,7 +77,7 @@ namespace cclua {
             TValue sl = L.stack[level];
             UpVal pp = L.openupval;
             UpVal p;
-            lua_assert (lfunc.isintwups (L) || L.openupval == null);
+            lua_assert (isintwups (L) || L.openupval == null);
             while (pp != null && pp.level >= level) {
                 p = pp;
                 lua_assert (upisopen (p));
@@ -97,7 +94,7 @@ namespace cclua {
             uv.u.open.touched = 1;
             uv.v = sl;  /* current value lives in the stack */
             uv.level = level;
-            if (lfunc.isintwups (L) == false) {  /* thread not in list of threads with upvalues? */
+            if (isintwups (L) == false) {  /* thread not in list of threads with upvalues? */
                 L.twups = G (L).twups;  /* link it to the list */
                 G (L).twups = L;
             }

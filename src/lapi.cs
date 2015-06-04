@@ -253,6 +253,18 @@ namespace cclua {
 
 
 
+        /*
+        ** push functions (C -> stack)
+        */
+        public static void lua_pushinteger (lua_State L, long n) {
+            imp.lua_lock (L);
+            imp.setivalue (L, L.top, n);
+            imp.api_incr_top (L);
+            imp.lua_unlock (L);
+        }
+
+
+
 
 
 

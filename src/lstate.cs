@@ -274,6 +274,10 @@ namespace cclua {
         public static GCObject obj2gco (GCObject v) { return check_exp<GCObject> (novariant (v.tt) < LUA_TDEADKEY, v); }
 
 
+        /* actual number of total bytes allocated */
+        public static long gettotalbytes (global_State g) { return (g.totalbytes + g.GCdebt); }
+
+
         /*
         ** Compute an initial seed as random as possible. Rely on Address Space
         ** Layout Randomization (if present) to increase randomness..
@@ -393,6 +397,16 @@ namespace cclua {
 			//lua_assert (gettotalbytes (g) == sizeof (LG));
 			luaM_free (L, fromstate (L));
 		}
+
+
+        public static void luaE_freethread (lua_State L, lua_State L1) {
+            LX l = fromstate (L).l;
+            luaF_close (L1, 0);  /* close all upvalues for this thread */
+            lua_assert (L1.openupval == null);
+            luai_userstatefree (L, L1);
+            lstate.freestack (L1);
+            luaM_free (L, l);
+        }
     }
 
     public static partial class lua530 {
@@ -428,6 +442,7 @@ namespace cclua {
 				base_ci = imp.luaM_newobject<CallInfo> (null);
             }
         }
+
 
         public static lua_State lua_newstate () {
             lua_State L;
