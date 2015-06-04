@@ -264,8 +264,8 @@ namespace cclua {
         public static void setpvalue (TValue obj, object x) { obj.value_.o = x; settt_ (obj, lua530.LUA_TLIGHTUSERDATA); }
         public static void setpvalue (lua_State L, int o, object t) { setpvalue (L.stack[o], t); }
 
-        public static void setbvalue (TValue obj, long x) { obj.value_.o = x; settt_ (obj, lua530.LUA_TBOOLEAN); }
-        public static void setbvalue (lua_State L, int o, long t) { setbvalue (L.stack[o], t); }
+        public static void setbvalue (TValue obj, int x) { obj.value_.o = x; settt_ (obj, lua530.LUA_TBOOLEAN); }
+        public static void setbvalue (lua_State L, int o, int t) { setbvalue (L.stack[o], t); }
 
         public static void setgcovalue (lua_State L, TValue obj, GCObject x) { obj.value_.o = x; settt_ (obj, ctb (x.tt)); }
         public static void setgcovalue (lua_State L, int o, GCObject t) { setgcovalue (L, L.stack[o], t); }
@@ -345,6 +345,7 @@ namespace cclua {
         public static void setobj2t (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
 		/* to new object */
         public static void setobj2n (lua_State L, TValue obj1, TValue obj2) { setobj (L, obj1, obj2); }
+        public static void setobj2n (lua_State L, TValue obj1, int obj2) { setobj (L, obj1, obj2); }
         public static void setobj2n (lua_State L, int obj1, int obj2) { setobj (L, obj1, obj2); }
         public static void setsvalue2n (lua_State L, TValue obj1, TString obj2) { setsvalue (L, obj1, obj2); }
 
@@ -425,7 +426,7 @@ namespace cclua {
 		public class Udata : GCObject {
 			public byte ttuv_;  /* user value's tag */
 			public Table metatable;
-			public long len;  /* number of bytes */
+			public int len;  /* number of bytes */
 			public Value user_;  /* user value */
 			public byte[] data;
 
@@ -461,6 +462,7 @@ namespace cclua {
 			o.tt_ = u.ttuv_;
 			checkliveness (G (L), o);
 		}
+        public static void getuservalue (lua_State L, Udata u, int o) { getuservalue (L, u, L.stack[o]); }
 
 
 		/*
@@ -654,8 +656,9 @@ namespace cclua {
                 }
                     
             }
-
         }
+        public static void luaO_arith (lua_State L, int op, int p1, int p2, int res) { luaO_arith (L, op, L.stack[p1], L.stack[p2], L.stack[res]); }
+
 
 
         public static int luaO_hexavalue (int c) {

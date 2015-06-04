@@ -202,6 +202,7 @@ namespace cclua {
             }
             luaG_runerror (L, "gettable chain too long; possible loop");
         }
+        public static void luaV_gettable (lua_State L, TValue t, int key, int val) { luaV_gettable (L, t, L.stack[key], val); }
 
 
         /*
