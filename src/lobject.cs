@@ -715,6 +715,10 @@ namespace cclua {
         }
 
 
+        public static void luaO_chunkid (byte[] o, byte[] source, int bufflen) {
+        }
+
+
 
 
 

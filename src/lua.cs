@@ -7,6 +7,10 @@ namespace cclua {
 		public static long LUA_VERSION_NUM = 503;
 
 
+        /* mark for precompiled code ('<esc>Lua') */
+        public static byte[] LUA_SIGNATURE = imp.str2byte ("\x1bLua");
+
+
         /* option for multiple returns in 'lua_pcall' and 'lua_call' */
         public const int LUA_MULTRET = -1;
 
@@ -59,6 +63,15 @@ namespace cclua {
         ** Type for continuation functions
         */
         public delegate int lua_KFunction (lua_State L, int status, long ctx);
+
+
+        /*
+        ** Type for functions that read/write blocks when loading/dumping Lua chunks
+        */
+        public delegate byte[] lua_Reader (lua_State L, object ud, ref int sz);
+
+        public delegate int lua_Writer (lua_State L, byte[] p, int sz, object ud);
+
 
         /* Functions to be called by the debugger in specific events */
         public delegate void lua_Hook (lua_State L, lua_Debug ar);

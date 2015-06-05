@@ -15,9 +15,6 @@ namespace cclua {
             public const int ERRORSTACKSIZE = LUAI_MAXSTACK + 200;
 
 
-
-            public static void incr_top (lua_State L) { L.top++; luaD_checkstack (L, 0); }
-
 			/*
 			** {======================================================
 			** Error-recovery functions
@@ -123,6 +120,47 @@ namespace cclua {
 
 
             public static CallInfo next_ci (lua_State L) { L.ci = (L.ci.next != null) ? L.ci.next : luaE_extendCI (L); return L.ci; }
+
+
+            /*
+            ** Execute a protected parser.
+            */
+            public class SParser {  /* data to 'f_parser' */
+                public Zio z;
+                public MBuffer buff;  /* dynamic structure used by the scanner */
+                public Dyndata dyd;  /* dynamic structures used by the parser */
+                public string mode;
+                public string name;
+
+                public SParser () {
+                    buff = new MBuffer ();
+                    dyd = new Dyndata ();
+                }
+            }
+
+
+            public static void checkmode (lua_State L, string mode, string x) {
+                if (mode != null && mode.IndexOf (x[0]) < 0) {
+                    luaO_pushfstring (L,
+                        "attempt to load a %s chunk (mode is '%s')", x, mode);
+                    luaD_throw (L, lua530.LUA_ERRSYNTAX);
+                }
+            }
+
+
+            public static void f_parser (lua_State L, object ud) {
+                LClosure cl = null;
+                SParser p = (SParser)ud;
+                int c = zgetc (p.z);  /* read first character */
+                if (c == lua530.LUA_SIGNATURE[0]) {
+                }
+                else {
+                    checkmode (L, p.mode, "text");
+                    cl = luaY_parser (L, p.z, p.buff, p.dyd, p.name, c);
+                }
+                lua_assert (cl.nupvalues == cl.p.sizeupvalues);
+                luaF_initupvals (L, cl);
+            }
 		}
 
 
@@ -140,6 +178,9 @@ namespace cclua {
 			else
 				condmovestack (L);
 		}
+
+
+        public static void incr_top (lua_State L) { L.top++; luaD_checkstack (L, 0); }
 
 
 		public static void luaD_throw (lua_State L, int errcode) {
@@ -388,6 +429,24 @@ namespace cclua {
                 luaD_shrinkstack (L);
             }
             L.errfunc = old_errfunc;
+            return status;
+        }
+
+
+
+        public static int luaD_protectedparser (lua_State L, Zio z, string name, string mode) {
+            L.nny++;
+            ldo.SParser p = new ldo.SParser ();
+            p.z = z;
+            p.name = name;
+            p.mode = mode;
+            luaZ_initbuffer (L, p.buff);
+            int status = luaD_pcall (L, ldo.f_parser, p, savestack (L, L.top), L.errfunc);
+            luaZ_freebuffer (L, p.buff);
+            luaM_freearray (L, p.dyd.actvar.arr);
+            luaM_freearray (L, p.dyd.gt.arr);
+            luaM_freearray (L, p.dyd.label.arr);
+            L.nny--;
             return status;
         }
 

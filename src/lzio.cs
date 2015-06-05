@@ -16,6 +16,19 @@ namespace cclua {
         }
 
 
+        public class Zio {
+            public int n;  /* bytes still unread */
+            public byte[] p;  /* current position in buffer */
+            public lua530.lua_Reader reader;  /* reader function */
+            public object data;  /* additional data */
+            public lua_State L;  /* Lua state (for reader) */
+        }
+
+
+        public static int zgetc (Zio z) { return (z.n-- > 0 ? z.p[z.n] : luaZ_fill (z)); }
+
+
+
         public static void luaZ_initbuffer (lua_State L, MBuffer buff) { buff.buffer = null; buff.buffsize = 0; }
 
 		public static byte[] luaZ_buffer (MBuffer buff) { return buff.buffer; }
@@ -34,6 +47,20 @@ namespace cclua {
 		}
 
 		public static void luaZ_freebuffer (lua_State L, MBuffer buff) { luaZ_resizebuffer (L, buff, 0); }
+
+
+        public static int luaZ_fill (Zio z) {
+            lua_State L = z.L;
+            lua_unlock (L);
+            int size = 0;
+            byte[] buff = z.reader (L, z.data, ref size);
+            lua_lock (L);
+            if (buff == null || size == 0)
+                return EOZ;
+            z.n = size - 1;  /* discount char being returned */
+            z.p = buff;
+            return z.p[0];
+        }
 		
 
 		public static byte[] luaZ_openspace (lua_State L, MBuffer buff, int n) {

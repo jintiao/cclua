@@ -654,6 +654,9 @@ namespace cclua {
 
 
 
+        /*
+        ** set functions (stack -> Lua)
+        */
 
 
 
