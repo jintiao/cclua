@@ -7,6 +7,17 @@ namespace cclua {
     public static partial class imp {
 
         private static class lparser {
+
+			/*
+			** compiles the main function, which is a regular vararg function with an
+			** upvalue named LUA_ENV
+			*/
+			public static void mainfunc (LexState ls, FuncState fs) {
+				BlockCnt bl = new BlockCnt ();
+				expdesc v = new expdesc ();
+				open_func (ls, fs, bl);
+				fs.f.is_vararg = 1;
+			}
         }
 
 
@@ -140,12 +151,47 @@ namespace cclua {
 
 
         public static LClosure luaY_parser (lua_State L, Zio z, MBuffer buff, Dyndata dyd, string name, int firstchar) {
+			LexState lexstate = new LexState ();
+			FuncState funcstate = new FuncState ();
             LClosure cl = luaF_newLclosure (L, 1);  /* create main closure */
             setclLvalue (L, L.top, cl);  /* anchor it (to avoid being collected) */
             incr_top (L);
-
-
-            return cl;  /* closure is on the stack, too */
+			lexstate.h = luaH_new (L);  /* create table for scanner */
+			sethvalue (L, L.top, lexstate.h);  /* anchor it */
+			incr_top ();
+			funcstate.f = luaF_newproto (L);
+			cl.p = funcstate.f;
+			funcstate.f.source = luaS_new (L, name);  /* create and anchor TString */
+			lua_assert (iswhite (funcstate.f));  /* do not need barrier here */
+			lexstate.buff = buff;
+			lexstate.dyd = dyd;
+			dyd.actvar = 0;
+			dyd.gt.n = 0;
+			dyd.label.n = 0;
+			luaX_setinput (L, lexstate, z, funcstate.f.source, firstchar);
+			lparser.mainfunc (lexstate, funcstate);
+			lua_assert (funcstate.prev == null && funcstate.nups == 1 && lexstate.fs == null);
+			/* all scopes should be correctly finished */
+			lua_assert (dyd.actvar == 0 && dyd.gt.n == 0 && dyd.label.n == 0);
+			L.top--;  /* remove scanner's table */
+			return cl;  /* closure is on the stack, too */
         }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
