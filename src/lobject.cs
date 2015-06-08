@@ -396,6 +396,7 @@ namespace cclua {
             public int len;  /* number of characters in string */
             public TString hnext;  /* linked list for hash table */
             public byte[] data;
+            public int offset;
         }
 
         /*
@@ -611,6 +612,10 @@ namespace cclua {
 		public static TValue luaO_nilobject = new TValue ();
 
 
+        /* size of buffer for 'luaO_utf8esc' function */
+        public const int UTF8BUFFSZ = 8;
+
+
         /*
         ** converts an integer to a "floating point byte", represented as
         ** (eeeeexxx), where the real value is (1xxx) * 2^(eeeee - 1) if
@@ -683,6 +688,24 @@ namespace cclua {
                     return 0;  /* conversion failed */
             }
             return e;  /* success; return string size */
+        }
+
+
+        public static int luaO_utf8esc (byte[] buff, ulong x) {
+            int n = 1;  /* number of bytes put in buffer (backwards) */
+            lua_assert (x <= 0x10FFFF);
+            if (x < 0x80)  /* ascii? */
+                buff[UTF8BUFFSZ - 1] = (byte)x;
+            else {  /* need continuation bytes */
+                uint mfb = 0x3f;  /* maximum that fits in first byte */
+                do {  /* add continuation bytes */
+                    buff[UTF8BUFFSZ - (n++)] = (byte)(0x80 | (x & 0x3f));
+                    x >>= 6;  /* remove added bits */
+                    mfb >>= 1;  /* now there is one less bit available in first byte */
+                } while (x > mfb);  /* still needs continuation byte? */
+                buff[UTF8BUFFSZ - n] = (byte)(((~mfb) << 1) | x);  /* add first byte */
+            }
+            return n;
         }
 
 

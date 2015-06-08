@@ -22,6 +22,8 @@ namespace cclua {
 
         public const int MAX_INT = Int32.MaxValue;  /* maximum value of an int */
 
+        public const int UCHAR_MAX = Byte.MaxValue;  /* maximum value of an int */
+
 
         /*
         ** conversion of pointer to integer:

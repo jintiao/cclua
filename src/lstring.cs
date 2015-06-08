@@ -15,37 +15,40 @@ namespace cclua {
             */
             public const int LUAI_HASHLIMIT = 5;
 
-			public static bool memcmp (byte[] a1, byte[] a2, int l) {
+            public static bool memcmp (byte[] a1, int offset, byte[] a2, int l) {
 				for (int i = 0; i < l; i++) {
-					if (a1[i] != a2[i])
+                    if (a1[i + offset] != a2[i])
 						return false;
 				}
 				return true;
 			}
+            public static bool memcmp (byte[] a1, byte[] a2, int l) { return memcmp (a1, 0, a2, l); }
 
             /*
             ** creates a new string object
             */
-            public static TString createstrobj (lua_State L, byte[] str, int l, int tag, uint h) {
+            public static TString createstrobj (lua_State L, byte[] str, int offset, int l, int tag, uint h) {
                 TString ts = luaC_newobj<TString> (L, tag);
                 ts.len = l;
                 ts.hash = h;
                 ts.extra = 0;
                 ts.data = str;
+                ts.offset = offset;
                 return ts;
             }
+            public static TString createstrobj (lua_State L, byte[] str, int l, int tag, uint h) { return createstrobj (L, str, 0, l, tag, h); }
 
 			/*
 			** checks whether short string exists and reuses it or creates a new one
 			*/
-			public static TString internshrstr (lua_State L, byte[] str, int l) {
+			public static TString internshrstr (lua_State L, byte[] str, int offset, int l) {
 				global_State g = G (L);
-				uint h = luaS_hash (str, l, g.seed);
+                uint h = luaS_hash (str, offset, l, g.seed);
                 long mod = lmod (h, g.strt.size);
                 TString list = g.strt.hash[mod];
 				TString ts = list;
 				for (; ts != null; ts = ts.hnext) {
-					if (l == ts.len && memcmp (str, ts.data, l) == true) {
+                    if (l == ts.len && memcmp (str, offset, ts.data, l) == true) {
 						/* found! */
 						if (isdead (g, ts))  /* dead (but not collected yet)? */
 							changewhite (ts);  /* resurrect it */
@@ -57,12 +60,13 @@ namespace cclua {
                     mod = lmod (h, g.strt.size);
                     list = g.strt.hash[mod];  /* recompute with new size */
 				}
-				ts = createstrobj (L, str, l, LUA_TSHRSTR, h);
+                ts = createstrobj (L, str, offset, l, LUA_TSHRSTR, h);
 				ts.hnext = list;
                 g.strt.hash[mod] = ts;
 				g.strt.nuse++;
 				return ts;
 			}
+			public static TString internshrstr (lua_State L, byte[] str, int l) { return internshrstr(L, str, 0, l); }
 		}
 
 
@@ -92,13 +96,14 @@ namespace cclua {
 		}
 
 
-		public static uint luaS_hash (byte[] str, int l, uint seed) {
+		public static uint luaS_hash (byte[] str, int offset, int l, uint seed) {
 			uint h = seed ^ (uint)l;
 			int step = (1 >> lstring.LUAI_HASHLIMIT) + 1;
 			for (int l1 = l; l1 >= step; l1 -= step)
-				h = h ^ ((h << 5) + (h >> 2) + str[l1 - 1]);
+                h = h ^ ((h << 5) + (h >> 2) + str[l1 - 1 + offset]);
 			return h;
 		}
+        public static uint luaS_hash (byte[] str, int l, uint seed) { return luaS_hash (str, 0, l, seed); }
 
 
         /*
@@ -157,15 +162,16 @@ namespace cclua {
 		/*
 		** new string (with explicit length)
 		*/
-		public static TString luaS_newlstr (lua_State L, byte[] str, int len) {
+		public static TString luaS_newlstr (lua_State L, byte[] str, int offset, int len) {
 			if (str.Length <= LUAI_MAXSHORTLEN)  /* short string? */
-                return lstring.internshrstr (L, str, len);
+                return lstring.internshrstr (L, str, offset, len);
 			else {
                 if ((len) > MAX_SIZE)
 					luaM_toobig (L);
-                return lstring.createstrobj (L, str, len, LUA_TLNGSTR, G (L).seed);
+                return lstring.createstrobj (L, str, offset, len, LUA_TLNGSTR, G (L).seed);
 			}
 		}
+        public static TString luaS_newlstr (lua_State L, byte[] str, int len) { return luaS_newlstr (L, str, 0, len); }
 
 		/*
 		** new zero-terminated string
