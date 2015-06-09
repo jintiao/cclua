@@ -1,7 +1,5 @@
 ﻿using System;
 
-using lua_State = cclua.lua530.lua_State;
-
 namespace cclua {
 
     public static partial class imp {
@@ -74,35 +72,49 @@ namespace cclua {
         */
 
         public static OpCode GET_OPCODE (uint i) { return (OpCode)((i >> POS_OP) & MASK1 (SIZE_OP, 0)); }
+        public static OpCode GET_OPCODE (FuncState fs, int i) { return GET_OPCODE (fs.f.code[i]); }
         public static void SET_OPCODE (ref uint i, uint o) { i = ((i & MASK0 (SIZE_OP, POS_OP)) | ((o << POS_OP) & MASK1 (SIZE_OP, POS_OP))); }
+        public static void SET_OPCODE (FuncState fs, int i, uint o) { SET_OPCODE (ref fs.f.code[i], o); }
 
         public static int getarg (uint i, int pos, int size) { return (int)((i >> pos) & MASK1 (size, 0)); }
         public static void setarg (ref uint i, int v, int pos, int size) { i = ((i & MASK0 (size, pos)) | (((uint)(v) << pos) & MASK1 (size, pos))); }
 
         public static int GETARG_A (uint i) { return getarg (i, POS_A, SIZE_A); }
+        public static int GETARG_A (FuncState fs, int i) { return GETARG_A (fs.f.code[i]); }
         public static void SETARG_A (ref uint i, int v) { setarg (ref i, v, POS_A, SIZE_A); }
+        public static void SETARG_A (FuncState fs, int i, int v) { SETARG_A (ref fs.f.code[i], v); }
 
         public static int GETARG_B (uint i) { return getarg (i, POS_B, SIZE_B); }
+        public static int GETARG_B (FuncState fs, int i) { return GETARG_B (fs.f.code[i]); }
         public static void SETARG_B (ref uint i, int v) { setarg (ref i, v, POS_B, SIZE_B); }
+        public static void SETARG_B (FuncState fs, int i, int v) { SETARG_B (ref fs.f.code[i], v); }
 
         public static int GETARG_C (uint i) { return getarg (i, POS_C, SIZE_C); }
+        public static int GETARG_C (FuncState fs, int i) { return GETARG_C (fs.f.code[i]); }
         public static void SETARG_C (ref uint i, int v) { setarg (ref i, v, POS_C, SIZE_C); }
+        public static void SETARG_C (FuncState fs, int i, int v) { SETARG_C (ref fs.f.code[i], v); }
 
         public static int GETARG_Bx (uint i) { return getarg (i, POS_Bx, SIZE_Bx); }
+        public static int GETARG_Bx (FuncState fs, int i) { return GETARG_Bx (fs.f.code[i]); }
         public static void SETARG_Bx (ref uint i, int v) { setarg (ref i, v, POS_Bx, SIZE_Bx); }
+        public static void SETARG_Bx (FuncState fs, int i, int v) { SETARG_Bx (ref fs.f.code[i], v); }
 
         public static int GETARG_Ax (uint i) { return getarg (i, POS_Ax, SIZE_Ax); }
+        public static int GETARG_Ax (FuncState fs, int i) { return GETARG_Ax (fs.f.code[i]); }
         public static void SETARG_Ax (ref uint i, int v) { setarg (ref i, v, POS_Ax, SIZE_Ax); }
+        public static void SETARG_Ax (FuncState fs, int i, int v) { SETARG_Ax (ref fs.f.code[i], v); }
 
         public static int GETARG_sBx (uint i) { return (GETARG_Bx (i) - MAXARG_sBx); }
+        public static int GETARG_sBx (FuncState fs, int i) { return GETARG_sBx (fs.f.code[i]); }
         public static void SETARG_sBx (ref uint i, int b) { SETARG_Bx (ref i, b + MAXARG_sBx); }
+        public static void SETARG_sBx (FuncState fs, int i, int v) { SETARG_sBx (ref fs.f.code[i], v); }
 
 
-        public static uint CREATE_ABC (int o, int a, int b, int c) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)b) << POS_B) | (((uint)c) << POS_C)); }
+        public static uint CREATE_ABC (OpCode o, int a, int b, int c) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)b) << POS_B) | (((uint)c) << POS_C)); }
 
-        public static uint CREATE_ABx (int o, int a, int bc) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)bc) << POS_Bx)); }
+        public static uint CREATE_ABx (OpCode o, int a, uint bc) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)bc) << POS_Bx)); }
 
-        public static uint CREATE_Ax (int o, int a) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_Ax)); }
+        public static uint CREATE_Ax (OpCode o, int a) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_Ax)); }
 
 
         /*
@@ -255,11 +267,11 @@ namespace cclua {
             OpArgK   /* argument is a constant or register/constant */
         }
 
-        public static OpMode getOpMode (int m) { return (OpMode)(luaP_opmodes[m] & 3); }
-        public static OpArgMask getBMode (int m) { return (OpArgMask)((luaP_opmodes[m] >> 4) & 3); }
-        public static OpArgMask getCMode (int m) { return (OpArgMask)((luaP_opmodes[m] >> 2) & 3); }
-        public static bool testAMode (int m) { return ((luaP_opmodes[m] & (1 << 6)) != 0); }
-        public static bool testTMode (int m) { return ((luaP_opmodes[m] & (1 << 7)) != 0); }
+        public static OpMode getOpMode (OpCode m) { return (OpMode)(luaP_opmodes[(int)m] & 3); }
+        public static OpArgMask getBMode (OpCode m) { return (OpArgMask)((luaP_opmodes[(int)m] >> 4) & 3); }
+        public static OpArgMask getCMode (OpCode m) { return (OpArgMask)((luaP_opmodes[(int)m] >> 2) & 3); }
+        public static bool testAMode (OpCode m) { return ((luaP_opmodes[(int)m] & (1 << 6)) != 0); }
+        public static bool testTMode (OpCode m) { return ((luaP_opmodes[(int)m] & (1 << 7)) != 0); }
 
 
         /* number of list items to accumulate before a SETLIST instruction */

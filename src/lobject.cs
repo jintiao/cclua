@@ -503,9 +503,9 @@ namespace cclua {
 			public int linedefined;
 			public int lastlinedefined;
 			public TValue[] k;  /* constants used by the function */
-			public int code;
+			public uint[] code;
 			public Proto[] p;  /* functions defined inside the function */
-			public int lineinfo;  /* map from opcodes to source lines (debug information) */
+			public int[] lineinfo;  /* map from opcodes to source lines (debug information) */
 			public LocVar[] locvars;  /* information about local variables (debug information) */
 			public Upvaldesc[] upvalues;  /* upvalue information */
 			public LClosure cache;  /* last created closure with this prototype */

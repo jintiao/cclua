@@ -166,7 +166,7 @@ namespace cclua {
                 public class ci {
                     public short idx;  /* index (R/K) */
                     public byte t;  /* table (register or upvalue) */
-                    public byte vt;  /* whether 't' is register (VLOCAL) or upvalue (VUPVAL) */
+                    public expkind vt;  /* whether 't' is register (VLOCAL) or upvalue (VUPVAL) */
                 }
 
                 public ci ind;  /* for indexed variables (VINDEXED) */
@@ -186,6 +186,18 @@ namespace cclua {
 
             public expdesc () {
                 u = new cu ();
+            }
+
+            public void copy (expdesc o) {
+                t = o.t;
+                f = o.f;
+                k = o.k;
+                u.ind.idx = o.u.ind.idx;
+                u.ind.t = o.u.ind.t;
+                u.ind.vt = o.u.ind.vt;
+                u.info = o.u.info;
+                u.nval = o.u.nval;
+                u.ival = o.u.ival;
             }
         }
 

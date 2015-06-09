@@ -348,7 +348,7 @@ namespace cclua {
                 ci.u.l.fbase = fbase;
                 ci.top = fbase + p.maxstacksize;
                 lua_assert (ci.top <= L.stack_last);
-                ci.u.l.savedpc = p.code;  /* starting point */
+                ci.u.l.savedpc = 0;  /* starting point */
                 ci.callstatus = CIST_LUA;
                 L.top = ci.top;
                 luaC_checkGC (L);  /* stack grow uses memory */
