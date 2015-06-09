@@ -667,6 +667,9 @@ namespace cclua {
         }
 
 
+		public static void luaK_setmultret (FuncState fs, expdesc e) { luaK_setreturns (fs, e, lua530.LUA_MULTRET); }
+
+
         public static void luaK_setoneret (FuncState fs, expdesc e) {
             if (e.k == expkind.VCALL) {  /* expression is an open function call? */
                 e.k = expkind.VNONRELOC;
