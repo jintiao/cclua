@@ -150,11 +150,12 @@ namespace cclua {
                 int oldsize = f.sizek;
                 k = fs.nk;
                 setivalue (idx, k);
-                luaM_growvector<TValue> (L, f.k, k, f.sizek, MAXARG_Ax, "constants");
+                luaM_growvector<TValue> (L, ref f.k, k, f.sizek, MAXARG_Ax, "constants");
                 while (oldsize < f.sizek) setnilvalue (f.k[oldsize++]);
                 setobj (L, f.k[k], v);
                 fs.nk++;
                 luaC_barrier (L, f, v);
+                return k;
             }
 
 
@@ -479,7 +480,7 @@ namespace cclua {
         public enum UnOpr { OPR_MINUS, OPR_BNOT, OPR_NOT, OPR_LEN, OPR_NOUNOPR }
 
 
-        public static int luaK_codeAsBx (FuncState fs, OpCode o, int A, uint sBx) { return luaK_codeABx (fs, o, A, sBx + MAXARG_sBx); }
+        public static int luaK_codeAsBx (FuncState fs, OpCode o, int A, int sBx) { return luaK_codeABx (fs, o, A, sBx + MAXARG_sBx); }
 
 
 
@@ -507,10 +508,14 @@ namespace cclua {
         public static int luaK_jump (FuncState fs) {
             int jpc = fs.jpc;  /* save list of jumps to here */
             fs.jpc = NO_JUMP;
-            int j = luaK_codeAsBx (fs, OpCode.OP_JMP, 0, unchecked ((uint)NO_JUMP));
+            int j = luaK_codeAsBx (fs, OpCode.OP_JMP, 0, NO_JUMP);
             luaK_concat (fs, ref j, jpc);  /* keep them on hold */
             return j;
         }
+
+
+        public static void luaK_jumpto (FuncState fs, int t) { luaK_patchlist (fs, luaK_jump (fs), t); }
+
 
         public static void luaK_ret (FuncState fs, int first, int nret) {
             luaK_codeABC (fs, OpCode.OP_RETURN, first, nret + 1, 0);
@@ -575,9 +580,9 @@ namespace cclua {
         public static int luaK_code (FuncState fs, uint i) {
             Proto f = fs.f;
             lcode.dischargejpc (fs);
-            luaM_growvector<uint> (fs.ls.L, f.code, fs.pc, f.sizecode, MAX_INT, "opcodes");
+            luaM_growvector<uint> (fs.ls.L, ref f.code, fs.pc, f.sizecode, MAX_INT, "opcodes");
             f.code[fs.pc] = i;
-            luaM_growvector<int> (fs.ls.L, f.lineinfo, fs.pc, f.sizelineinfo, MAX_INT, "opcodes");
+            luaM_growvector<int> (fs.ls.L, ref f.lineinfo, fs.pc, f.sizelineinfo, MAX_INT, "opcodes");
             f.lineinfo[fs.pc] = fs.ls.lastline;
             return fs.pc++;
         }
@@ -592,7 +597,7 @@ namespace cclua {
         }
 
 
-        public static int luaK_codeABx (FuncState fs, OpCode o, int a, uint bc) {
+        public static int luaK_codeABx (FuncState fs, OpCode o, int a, int bc) {
             lua_assert (getOpMode (o) == OpMode.iABx || getOpMode (o) == OpMode.iAsBx);
             lua_assert (getCMode (o) == OpArgMask.OpArgN);
             lua_assert (a <= MAXARG_A && bc <= MAXARG_Bx);
@@ -602,7 +607,7 @@ namespace cclua {
 
         public static int luaK_codek (FuncState fs, int reg, int k) {
             if (k <= MAXARG_Bx)
-                return luaK_codeABx (fs, OpCode.OP_LOADK, reg, (uint)k);
+                return luaK_codeABx (fs, OpCode.OP_LOADK, reg, k);
             else {
                 int p = luaK_codeABx (fs, OpCode.OP_LOADKX, reg, 0);
                 lcode.codeextraarg (fs, k);

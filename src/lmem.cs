@@ -67,5 +67,31 @@ namespace cclua {
         public static void luaM_free (lua_State L, object block) {
             /* do nothing */
         }
+
+
+        public static void luaM_growvector<T> (lua_State L, ref T[] v, int nelems, int size, int limit, string e) where T : new () {
+            if (nelems + 1 > size)
+                v = luaM_growaux_<T> (L, v, ref size, limit, e);
+        }
+
+
+        public const int MINSIZEARRAY = 4;
+
+
+        public static T[] luaM_growaux_<T> (lua_State L, T[] block, ref int size, int limit, string what) where T : new () {
+            int newsize = 0;
+            if (size >= limit / 2) {
+                if (size >= limit)
+                    luaG_runerror (L, "too many %s (limit is %d)", what, limit);
+                newsize = limit;
+            }
+            else {
+                newsize = size * 2;
+                if (newsize < MINSIZEARRAY)
+                    newsize = MINSIZEARRAY;
+            }
+            T[] newblock = luaM_reallocv<T> (L, block, size, newsize);
+            return newblock;
+        }
     }
 }

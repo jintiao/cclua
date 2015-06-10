@@ -24,6 +24,8 @@ namespace cclua {
 
         public const int UCHAR_MAX = Byte.MaxValue;  /* maximum value of an int */
 
+        public const int SHRT_MAX = Int16.MaxValue;  /* maximum value of an int */
+
 
         /*
         ** conversion of pointer to integer:

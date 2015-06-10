@@ -73,8 +73,8 @@ namespace cclua {
 
         public static OpCode GET_OPCODE (uint i) { return (OpCode)((i >> POS_OP) & MASK1 (SIZE_OP, 0)); }
         public static OpCode GET_OPCODE (FuncState fs, int i) { return GET_OPCODE (fs.f.code[i]); }
-        public static void SET_OPCODE (ref uint i, uint o) { i = ((i & MASK0 (SIZE_OP, POS_OP)) | ((o << POS_OP) & MASK1 (SIZE_OP, POS_OP))); }
-        public static void SET_OPCODE (FuncState fs, int i, uint o) { SET_OPCODE (ref fs.f.code[i], o); }
+        public static void SET_OPCODE (ref uint i, int o) { i = (uint)((i & MASK0 (SIZE_OP, POS_OP)) | ((o << POS_OP) & MASK1 (SIZE_OP, POS_OP))); }
+        public static void SET_OPCODE (FuncState fs, int i, int o) { SET_OPCODE (ref fs.f.code[i], o); }
 
         public static int getarg (uint i, int pos, int size) { return (int)((i >> pos) & MASK1 (size, 0)); }
         public static void setarg (ref uint i, int v, int pos, int size) { i = ((i & MASK0 (size, pos)) | (((uint)(v) << pos) & MASK1 (size, pos))); }
@@ -112,7 +112,7 @@ namespace cclua {
 
         public static uint CREATE_ABC (OpCode o, int a, int b, int c) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)b) << POS_B) | (((uint)c) << POS_C)); }
 
-        public static uint CREATE_ABx (OpCode o, int a, uint bc) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)bc) << POS_Bx)); }
+        public static uint CREATE_ABx (OpCode o, int a, int bc) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_A) | (((uint)bc) << POS_Bx)); }
 
         public static uint CREATE_Ax (OpCode o, int a) { return ((((uint)o) << POS_OP) | (((uint)a) << POS_Ax)); }
 
