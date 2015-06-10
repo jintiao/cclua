@@ -8,6 +8,19 @@ namespace cclua {
 		
 		public static void resethookcount (lua_State L) { L.hookcount = L.basehookcount; }
 
+
+        public static void luaG_errormsg (lua_State L) {
+            if (L.errfunc != 0) {  /* is there an error handling function? */
+                int errfunc = restorestack (L, L.errfunc);
+                setobjs2s (L, L.top, L.top - 1);  /* move argument */
+                setobjs2s (L, L.top - 1, errfunc);  /* push function */
+                L.top++;  /* assume EXTRA_STACK */
+                luaD_call (L, L.top - 2, 1, 0);  /* call it */
+            }
+            luaD_throw (L, lua530.LUA_ERRRUN);
+        }
+
+
         public static void luaG_runerror (lua_State L, string format, params object[] args) {
             // TODO
         }

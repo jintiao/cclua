@@ -5,7 +5,13 @@ using CallInfo = cclua.imp.CallInfo;
 using TValue = cclua.imp.TValue;
 using TString = cclua.imp.TString;
 using CClosure = cclua.imp.CClosure;
+using LClosure = cclua.imp.LClosure;
 using Table = cclua.imp.Table;
+using CallS = cclua.imp.CallS;
+using Zio = cclua.imp.Zio;
+using global_State = cclua.imp.global_State;
+using Udata = cclua.imp.Udata;
+using UpVal = cclua.imp.UpVal;
 
 namespace cclua {
 
@@ -36,6 +42,8 @@ namespace cclua {
 
 
         public static void api_incr_top (lua_State L) { L.top++; api_check (L.top <= L.ci.top, "stack overflow"); }
+
+        public static void adjustresults (lua_State L, int nres) { if (nres == lua530.LUA_MULTRET && L.ci.top < L.top) L.ci.top = L.top; }
 
         public static void api_checknelems (lua_State L, int n) { api_check (n < (L.top - L.ci.func), "not enough elements in the stack"); }
 
@@ -89,6 +97,59 @@ namespace cclua {
                 setobj2s (L, to, temp);
                 to--;
             }
+        }
+
+
+        public static void checkresults (lua_State L, int na, int nr) {
+            api_check (nr == lua530.LUA_MULTRET || (L.ci.top - L.top >= nr - na), "results from function overflow current stack size");
+        }
+
+
+        /*
+        ** Execute a protected call.
+        */
+        public class CallS {  /* data to 'f_call' */
+            public int func;
+            public int nresults;
+        }
+
+
+        public static void f_call (lua_State L, object ud) {
+            CallS c = (CallS)ud;
+            luaD_call (L, c.func, c.nresults, 0);
+        }
+
+
+        public static string aux_upvalue (TValue fi, int n, ref TValue val, ref CClosure owner, ref UpVal uv) {
+            switch (ttype (fi)) {
+                case LUA_TCCL: {  /* C closure */
+                    CClosure f = clCvalue (fi);
+                    if ((1 <= n && n <= f.nupvalues) == false) return null;
+                    val = f.upvalue[n - 1];
+                    if (owner != null) owner = f;
+                    return "";
+                }
+                case LUA_TLCL: {  /* Lua closure */
+                    LClosure f = clLvalue (fi);
+                    Proto p = f.p;
+                    if ((1 <= n && n <= p.sizeupvalues) == false) return null;
+                    val = f.upvals[n - 1].v;
+                    if (uv != null) uv = f.upvals[n - 1];
+                    TString name = p.upvalues[n - 1].name;
+                    return (name == null) ? "(*no name)" : byte2str (getstr (name));
+                }
+                default: return null;  /* not a closure */
+            }
+        }
+
+
+        public static UpVal getupvalref (lua_State L, int fidx, int n, ref LClosure pf) {
+            TValue fi = index2addr (L, fidx);
+            api_check (ttisLclosure (fi), "Lua function expected");
+            LClosure f = clLvalue (fi);
+            api_check ((1 <= n && n <= f.p.sizeupvalues), "invalid upvalue index");
+            if (pf != null) pf = f;
+            return f.upvals[n - 1];  /* get its upvalue pointer */
         }
     }
 
@@ -659,12 +720,455 @@ namespace cclua {
         */
 
 
+        public static void lua_setglobal (lua_State L, string name) {
+            Table reg = imp.hvalue (imp.G (L).l_registry);
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue gt = imp.luaH_getint (reg, LUA_RIDX_GLOBALS);  /* global table */
+            imp.setsvalue2s (L, L.top++, imp.luaS_new (L, name));
+            imp.luaV_settable (L, gt, L.top - 1, L.top - 2);
+            L.top -= 2;  /* pop value and key */
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_settable (lua_State L, int idx) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 2);
+            TValue t = imp.index2addr (L, idx);
+            imp.luaV_settable (L, t, L.top - 2, L.top - 1);
+            L.top -= 2;  /* pop index and value */
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_setfield (lua_State L, int idx, string k) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue t = imp.index2addr (L, idx);
+            imp.setsvalue2s (L, L.top++, imp.luaS_new (L, k));
+            imp.luaV_settable (L, t, L.top - 1, L.top - 2);
+            L.top -= 2;  /* pop value and key */
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_seti (lua_State L, int idx, long n) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue t = imp.index2addr (L, idx);
+            imp.setivalue (L, L.top++, n);
+            imp.luaV_settable (L, t, L.top - 1, L.top - 2);
+            L.top -= 2;  /* pop value and key */
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_rawset (lua_State L, int idx) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 2);
+            TValue o = imp.index2addr (L, idx);
+            imp.api_check (imp.ttistable (o), "table expected");
+            Table t = imp.hvalue (o);
+            imp.setobj2t (L, imp.luaH_set (L, t, L.top - 2), L.top - 1);
+            imp.invalidateTMcache (t);
+            imp.luaC_barrierback (L, t, L.top - 1);
+            L.top -= 2;
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_rawseti (lua_State L, int idx, long n) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue o = imp.index2addr (L, idx);
+            imp.api_check (imp.ttistable (o), "table expected");
+            Table t = imp.hvalue (o);
+            imp.luaH_setint (L, t, n, L.top - 1);
+            imp.luaC_barrierback (L, t, L.top - 1);
+            L.top--;
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_rawsetp (lua_State L, int idx, object p) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue o = imp.index2addr (L, idx);
+            imp.api_check (imp.ttistable (o), "table expected");
+            Table t = imp.hvalue (o);
+            TValue k = new TValue ();
+            imp.setpvalue (k, p);
+            imp.setobj2t (L, imp.luaH_set (L, t, k), L.top - 1);
+            imp.luaC_barrierback (L, t, L.top - 1);
+            L.top--;
+            imp.lua_unlock (L);
+        }
+
+
+        public static int lua_setmetatable (lua_State L, int objindex) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue obj = imp.index2addr (L, objindex);
+            Table mt = null;
+            if (imp.ttisnil (L, L.top - 1))
+                mt = null;
+            else {
+                imp.api_check (imp.ttistable (L, L.top - 1), "table expected");
+                mt = imp.hvalue (L, L.top - 1);
+            }
+            switch (imp.ttnov (obj)) {
+                case LUA_TTABLE: {
+                    imp.hvalue (obj).metatable = mt;
+                    if (mt != null) {
+                        imp.luaC_objbarrier (L, imp.gcvalue (obj), mt);
+                        imp.luaC_checkfinalizer (L, imp.gcvalue (obj), mt);
+                    }
+                    break;
+                }
+                case LUA_TUSERDATA: {
+                    imp.uvalue (obj).metatable = mt;
+                    if (mt != null) {
+                        imp.luaC_objbarrier (L, imp.uvalue (obj), mt);
+                        imp.luaC_checkfinalizer (L, imp.gcvalue (obj), mt);
+                    }
+                    break;
+                }
+                default: {
+                    imp.G (L).mt[imp.ttnov (obj)] = mt;
+                    break;
+                }
+            }
+            L.top--;
+            imp.lua_unlock (L);
+            return 1;
+        }
+
+
+        public static void lua_setuservalue (lua_State L, int idx) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            TValue o = imp.index2addr (L, idx);
+            imp.api_check (imp.ttisfulluserdata (o), "full userdata expected");
+            imp.setuservalue (L, imp.uvalue (o), L.top - 1);
+            imp.luaC_barrierback (L, imp.gcvalue (o), L.top - 1);
+            L.top--;
+            imp.lua_unlock (L);
+        }
+
+
+        /*
+        ** 'load' and 'call' functions (run Lua code)
+        */
+
+
+        public static void lua_callk (lua_State L, int nargs, int nresults, long ctx, lua_KFunction k) {
+            imp.lua_lock (L);
+            imp.api_check (k == null || imp.isLua (L.ci) == false, "cannot use continuations inside hooks");
+            imp.api_checknelems (L, nargs + 1);
+            imp.api_check (L.status == LUA_OK, "cannot do calls on non-normal thread");
+            imp.checkresults (L, nargs, nresults);
+            int func = L.top - (nargs + 1);
+            if (k != null && L.nny == 0) {  /* need to prepare continuation? */
+                L.ci.u.c.k = k;  /* save continuation */
+                L.ci.u.c.ctx = ctx;  /* save context */
+                imp.luaD_call (L, func, nresults, 1);  /* do the call */
+            }
+            else  /* no continuation or no yieldable */
+                imp.luaD_call (L, func, nresults, 0);  /* just do the call */
+            imp.adjustresults (L, nresults);
+            imp.lua_unlock (L);
+        }
+
+
+        public static int lua_pcallk (lua_State L, int nargs, int nresults, int errfunc, long ctx, lua_KFunction k) {
+            imp.lua_lock (L);
+            imp.api_check (k == null || imp.isLua (L.ci) == false, "cannot use continuations inside hooks");
+            imp.api_checknelems (L, nargs + 1);
+            imp.api_check (L.status == LUA_OK, "cannot do calls on non-normal thread");
+            imp.checkresults (L, nargs, nresults);
+            int func = 0;
+            if (errfunc == 0)
+                func = 0;
+            else {
+                TValue o = imp.index2addr (L, errfunc);
+                imp.api_checkstackindex (errfunc, o);
+                func = imp.savestack (L, errfunc);
+            }
+            CallS c = new CallS ();
+            c.func = L.top - (nargs + 1);  /* function to be called */
+            int status = 0;
+            if (k == null && L.nny > 0) {  /* no continuation or no yieldable? */
+                c.nresults = nresults;  /* do a 'conventional' protected call */
+                status = imp.luaD_pcall (L, imp.f_call, c, imp.savestack (L, c.func), func);
+            }
+            else {  /* prepare continuation (call is already protected by 'resume') */
+                CallInfo ci = L.ci;
+                ci.u.c.k = k;  /* save continuation */
+                ci.u.c.ctx = ctx;  /* save context */
+                /* save information for error recovery */
+                ci.extra = imp.savestack (L, c.func);
+                ci.u.c.old_errfunc = L.errfunc;
+                L.errfunc = func;
+                imp.setoah (ref ci.callstatus, L.allowhook);  /* save value of 'allowhook' */
+                ci.callstatus |= imp.CIST_YPCALL;  /* function can do error recovery */
+                imp.luaD_call (L, c.func, nresults, 1);  /* do the call */
+                ci.callstatus = (byte)(ci.callstatus & (~imp.CIST_YPCALL));
+                L.errfunc = ci.u.c.old_errfunc;
+                status = LUA_OK;  /* if it is here, there were no errors */
+            }
+            imp.adjustresults (L, nresults);
+            imp.lua_unlock (L);
+            return status;
+        }
+
+
+        public static int lua_load (lua_State L, lua_Reader reader, object data, string chunkname, string mode) {
+            imp.lua_lock (L);
+            if (chunkname == null) chunkname = "?";
+            Zio z = new Zio ();
+            imp.luaZ_init (L, z, reader, data);
+            int status = imp.luaD_protectedparser (L, z, chunkname, mode);
+            if (status == LUA_OK) {  /* no errors? */
+                LClosure f = imp.clLvalue (L, L.top - 1);  /* get newly created function */
+                if (f.nupvalues >= 1) {  /* does it have an upvalue? */
+                    /* get global table from registry */
+                    Table reg = imp.hvalue (imp.G (L).l_registry);
+                    TValue gt = imp.luaH_getint (reg, LUA_RIDX_GLOBALS);
+                    /* set global table as 1st upvalue of 'f' (may be LUA_ENV) */
+                    imp.setobj (L, f.upvals[0].v, gt);
+                    imp.luaC_upvalbarrier (L, f.upvals[0]);
+                }
+            }
+            imp.lua_unlock (L);
+            return status;
+        }
+
+
+        public static int lua_status (lua_State L) {
+            return L.status;
+        }
+
+
+        /*
+        ** Garbage-collection function
+        */
+
+        public static int lua_gc (lua_State L, int what, int data) {
+            int res = 0;
+            imp.lua_lock (L);
+            global_State g = imp.G (L);
+            switch (what) {
+                case LUA_GCSTOP: {
+                    g.gcrunning = 0;
+                    break;
+                }
+                case LUA_GCRESTART: {
+                    imp.luaE_setdebt (g, 0);
+                    g.gcrunning = 1;
+                    break;
+                }
+                case LUA_GCCOLLECT: {
+                    imp.luaC_fullgc (L, false);
+                    break;
+                }
+                case LUA_GCCOUNT: {
+                    /* GC values are expressed in Kbytes: #bytes/2^10 */
+                    res = (int)(imp.gettotalbytes (g) >> 10);
+                    break;
+                }
+                case LUA_GCCOUNTB: {
+                    res = (int)(imp.gettotalbytes (g) & 0x3ff);
+                    break;
+                }
+                case LUA_GCSTEP: {
+                    long debt = 1;  /* =1 to signal that it did an actual step */
+                    byte oldrunning = g.gcrunning;
+                    g.gcrunning = 1;  /* allow GC to run */
+                    if (data == 0) {
+                        imp.luaE_setdebt (g, -imp.GCSTEPSIZE);  /* to do a "small" step */
+                        imp.luaC_step (L);
+                    }
+                    else {  /* add 'data' to total debt */
+                        debt = (long)data * 1024 + g.GCdebt;
+                        imp.luaE_setdebt (g, debt);
+                        imp.luaC_checkGC (L);
+                    }
+                    g.gcrunning = oldrunning;  /* restore previous state */
+                    if (debt > 0 && g.gcstate == imp.GCSpause)  /* end of cycle? */
+                        res = 1;  /* signal it */
+                    break;
+                }
+                case LUA_GCSETPAUSE: {
+                    res = g.gcpause;
+                    g.gcpause = data;
+                    break;
+                }
+                case LUA_GCSETSTEPMUL: {
+                    res = g.gcstepmul;
+                    if (data < 40) data = 40;  /* avoid ridiculous low values (and 0) */
+                    g.gcstepmul = data;
+                    break;
+                }
+                case LUA_GCISRUNNING: {
+                    res = g.gcrunning;
+                    break;
+                }
+                default: {
+                    res = -1;  /* invalid option */
+                    break;
+                }
+            }
+            imp.lua_unlock (L);
+            return res;
+        }
 
 
 
+        /*
+        ** miscellaneous functions
+        */
 
 
+        public static int lua_error (lua_State L) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, 1);
+            imp.luaG_errormsg (L);
+            /* code unreachable; will unlock when control actually leaves the kernel */
+            return 0;  /* to avoid warnings */
+        }
 
 
+        public static int lua_next (lua_State L, int idx) {
+            imp.lua_lock (L);
+            TValue t = imp.index2addr (L, idx);
+            imp.api_check (imp.ttistable (t), "table expected");
+            int more = imp.luaH_next (L, imp.hvalue (t), L.top - 1);
+            if (more != 0)
+                imp.api_incr_top (L);
+            else
+                L.top -= 1;
+            imp.lua_unlock (L);
+            return more;
+        }
+
+
+        public static void lua_concat (lua_State L, int n) {
+            imp.lua_lock (L);
+            imp.api_checknelems (L, n);
+            if (n >= 2) {
+                imp.luaC_checkGC (L);
+                imp.luaV_concat (L, n);
+            }
+            else if (n == 0) {  /* push empty string */
+                imp.setsvalue2s (L, L.top, imp.luaS_new (L, ""));
+                imp.api_incr_top (L);
+            }
+            /* else n == 1; nothing to do */
+            imp.lua_unlock (L);
+        }
+
+
+        public static void lua_len (lua_State L, int idx) {
+            imp.lua_lock (L);
+            TValue t = imp.index2addr (L, idx);
+            imp.luaV_objlen (L, L.top, t);
+            imp.api_incr_top (L);
+            imp.lua_unlock (L);
+        }
+
+
+        public static lua_Alloc lua_getallocf (lua_State L, ref object ud) {
+            imp.lua_lock (L);
+            if (ud != null) ud = imp.G (L).ud;
+            lua_Alloc f = imp.G (L).frealloc;
+            imp.lua_unlock (L);
+            return f;
+        }
+
+
+        public static void lua_setallocf (lua_State L, lua_Alloc f, object ud) {
+            imp.lua_lock (L);
+            imp.G (L).ud = ud;
+            imp.G (L).frealloc = f;
+            imp.lua_unlock (L);
+        }
+
+
+        public static byte[] lua_newuserdata (lua_State L, int size) {
+            imp.lua_lock (L);
+            imp.luaC_checkGC (L);
+            Udata u = imp.luaS_newudata (L, size);
+            imp.setuvalue (L, L.top, u);
+            imp.api_incr_top (L);
+            imp.lua_unlock (L);
+            return imp.getudatamem (u);
+        }
+
+
+        public static string lua_getupvalue (lua_State L, int funcindex, int n) {
+            imp.lua_lock (L);
+            TValue val = null;
+            CClosure cl = null;
+            UpVal uv = null;
+            string name = imp.aux_upvalue (imp.index2addr (L, funcindex), n, ref val, ref cl, ref uv);
+            if (name != null) {
+                imp.setobj2s (L, L.top, val);
+                imp.api_incr_top (L);
+            }
+            imp.lua_unlock (L);
+            return name;
+        }
+
+
+        public static string lua_setupvalue (lua_State L, int funcindex, int n) {
+            imp.lua_lock (L);
+            TValue val = null;
+            CClosure owner = null;
+            UpVal uv = null;
+            TValue fi = imp.index2addr (L, funcindex);
+            imp.api_checknelems (L, 1);
+            string name = imp.aux_upvalue (fi, n, ref val, ref owner, ref uv);
+            if (name != null) {
+                L.top--;
+                imp.setobj (L, val, L.top);
+                if (owner != null) imp.luaC_barrier (L, owner, L.top);
+                else if (uv != null) imp.luaC_upvalbarrier (L, uv);
+            }
+            imp.lua_unlock (L);
+            return name;
+        }
+
+
+        public static object lua_upvalueid (lua_State L, int fidx, int n) {
+            TValue fi = imp.index2addr (L, fidx);
+            LClosure pf = null;
+            switch (imp.ttype (fi)) {
+                case imp.LUA_TLCL: {  /* lua closure */
+                    return imp.getupvalref (L, fidx, n, ref pf);
+                }
+                case imp.LUA_TCCL: {  /* C closure */
+                    CClosure f = imp.clCvalue (fi);
+                    imp.api_check (1 <= n && n <= f.nupvalues, "invalid upvalue index");
+                    return f.upvalue[n - 1];
+                }
+                default: {
+                    imp.api_check (false, "closure expected");
+                    return null;
+                }
+            }
+        }
+
+
+        public static void lua_upvaluejoin (lua_State L, int fidx1, int n1, int fidx2, int n2) {
+            LClosure f1 = null;
+            UpVal up2 = imp.getupvalref (L, fidx2, n2, ref f1);
+            UpVal up1 = imp.getupvalref (L, fidx1, n1, ref f1);
+            imp.luaC_upvdeccount (L, up1);
+            imp.uvcopy (up1, up2);
+            up1.refcount++;
+            if (imp.upisopen (up1)) up1.u.open.touched = 1;
+            imp.luaC_upvalbarrier (L, up1);
+        }
     }
 }

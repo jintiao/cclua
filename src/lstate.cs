@@ -1,6 +1,7 @@
 ﻿using System;
 
 using lua_State = cclua.lua530.lua_State;
+using lua_Alloc = cclua.lua530.lua_Alloc;
 using GCObject = cclua.imp.GCObject;
 using global_State = cclua.imp.global_State;
 using CallInfo = cclua.imp.CallInfo;
@@ -132,7 +133,7 @@ namespace cclua {
             }
             public class cc {
                 public lua530.lua_KFunction k;  /* continuation in case of yields */
-                public long old_errfunc;
+                public int old_errfunc;
                 public long ctx;  /* context info. in case of yields */
             }
             public class uc {
@@ -174,7 +175,7 @@ namespace cclua {
 		public static bool isLua (CallInfo ci) { return ((ci.callstatus & CIST_LUA) != 0); }
 
 		/* assume that CIST_OAH has offset 0 and that 'v' is strictly 0/1 */
-		public static void setoah (ref int st, int v) { st = ((st & (~CIST_OAH)) | v); }
+		public static void setoah (ref byte st, int v) { st = (byte)((st & (~CIST_OAH)) | v); }
 		public static int getoah (int st) { return (st & CIST_OAH); }
 
 
@@ -182,6 +183,8 @@ namespace cclua {
         ** 'global state', shared by all threads of this state
         */
         public class global_State {
+            public lua_Alloc frealloc;  /* function to reallocate memory */
+            public object ud;  /* auxiliary data to 'frealloc' */
 			public long totalbytes;  /* number of bytes currently allocated - GCdebt */
 			public long GCdebt;  /* bytes allocated not yet compensated by the collector */
 			public long GCmemtrav;  /* memory traversed by the GC */

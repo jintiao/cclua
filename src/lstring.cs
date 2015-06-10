@@ -182,6 +182,17 @@ namespace cclua {
 		}
 
 
+        public static Udata luaS_newudata (lua_State L, int s) {
+            if (s > MAX_SIZE)
+                luaM_toobig (L);
+            Udata u = luaC_newobj<Udata> (L, lua530.LUA_TUSERDATA);
+            u.len = s;
+            u.metatable = null;
+            setuservalue (L, u, luaO_nilobject);
+            return u;
+        }
+
+
         public static byte[] str2byte (string str) { return Encoding.UTF8.GetBytes (str); }
         public static string byte2str (byte[] buf) { return Encoding.UTF8.GetString (buf); }
         public static string byte2str (byte[] buf, int index, int count) { return Encoding.UTF8.GetString (buf, index, count); }

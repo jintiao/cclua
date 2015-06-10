@@ -38,6 +38,15 @@ namespace cclua {
             }
         }
 
+        public static void uvcopy (UpVal o1, UpVal o2) {
+            tvcopy (o1.v, o2.v);
+            o1.refcount = o2.refcount;
+            o1.level = o2.level;
+            o1.u.open.touched = o2.u.open.touched;
+            o1.u.open.next = o2.u.open.next;
+            tvcopy (o1.u.value, o2.u.value);
+        }
+
 
         public static bool upisopen (UpVal up) { return (up.v != up.u.value); }
 
@@ -54,7 +63,7 @@ namespace cclua {
             LClosure c = luaC_newobj<LClosure> (L, LUA_TLCL);
             c.p = null;
             c.nupvalues = (byte)n;
-            c.upvalue = luaM_emptyvector<UpVal> (L, n);
+            c.upvals = luaM_emptyvector<UpVal> (L, n);
             return c;
         }
 
@@ -68,7 +77,7 @@ namespace cclua {
                 uv.refcount = 1;
                 uv.v = uv.u.value;  /* make it closed */
                 setnilvalue (uv.v);
-                cl.upvalue[i] = uv;
+                cl.upvals[i] = uv;
             }
         }
 

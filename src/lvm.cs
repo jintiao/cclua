@@ -250,6 +250,7 @@ namespace cclua {
             }
             luaG_runerror (L, "settable chain too long; possible loop");
         }
+        public static void luaV_settable (lua_State L, TValue t, int key, int val) { luaV_settable (L, t, L.stack[key], val); }
 
 
         /*

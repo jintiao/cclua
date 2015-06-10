@@ -61,6 +61,15 @@ namespace cclua {
             z.p = buff;
             return z.p[0];
         }
+
+
+        public static void luaZ_init (lua_State L, Zio z, lua530.lua_Reader reader, object data) {
+            z.L = L;
+            z.reader = reader;
+            z.data = data;
+            z.n = 0;
+            z.p = null;
+        }
 		
 
 		public static byte[] luaZ_openspace (lua_State L, MBuffer buff, int n) {

@@ -73,6 +73,13 @@ namespace cclua {
         public delegate int lua_Writer (lua_State L, byte[] p, int sz, object ud);
 
 
+        /*
+        ** Type for memory-allocation functions
+        */
+        public interface lua_Alloc {
+        }
+
+
         /* Functions to be called by the debugger in specific events */
         public delegate void lua_Hook (lua_State L, lua_Debug ar);
 

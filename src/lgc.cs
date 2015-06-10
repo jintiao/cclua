@@ -488,7 +488,7 @@ namespace cclua {
             public static long traverseLclosure (global_State g, LClosure cl) {
                 markobject (g, cl.p);  /* mark its prototype */
                 for (int i = 0; i < cl.nupvalues; i++) {  /* mark its upvalues */
-                    UpVal uv = cl.upvalue[i];
+                    UpVal uv = cl.upvals[i];
                     if (uv != null) {
                         if (upisopen (uv) && g.gcstate != GCSinsideatomic)
                             uv.u.open.touched = 1;  /* can be marked in 'remarkupvals' */
@@ -647,7 +647,7 @@ namespace cclua {
 
             public static void freeLclosure (lua_State L, LClosure cl) {
                 for (int i = 0; i < cl.nupvalues; i++) {
-                    UpVal uv = cl.upvalue[i];
+                    UpVal uv = cl.upvals[i];
                     if (uv != null)
                         luaC_upvdeccount (L, uv);
                 }
@@ -1099,6 +1099,7 @@ namespace cclua {
 			if (iscollectable (v) && isblack (p) && iswhite (gcvalue (v)))
 				lgc.luaC_barrier_ (L, p, gcvalue (v));
         }
+        public static void luaC_barrier (lua_State L, GCObject p, int v) { luaC_barrier (L, p, L.stack[v]); }
 
         public static void luaC_barrierback (lua_State L, GCObject p, TValue v) {
 			if (iscollectable (v) && isblack (p) && iswhite (gcvalue (v)))

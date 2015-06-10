@@ -592,6 +592,7 @@ namespace cclua {
                 return p;
             else return luaH_newkey (L, t, key);
         }
+        public static TValue luaH_set (lua_State L, Table t, int key) { return luaH_set (L, t, L.stack[key]); }
 
 
         public static void luaH_setint (lua_State L, Table t, long key, TValue value) {
@@ -603,6 +604,7 @@ namespace cclua {
             }
             setobj2t (L, p, value);
         }
+        public static void luaH_setint (lua_State L, Table t, long key, int value) { luaH_setint (L, t, key, L.stack[value]); }
 
 
 		/*

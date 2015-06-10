@@ -457,6 +457,8 @@ namespace cclua {
 			u.ttuv_ = (byte)o.tt_;
 			checkliveness (G (L), o);
 		}
+        public static void setuservalue (lua_State L, Udata u, int o) { setuservalue (L, u, L.stack[o]); }
+
 
 		public static void getuservalue (lua_State L, Udata u, TValue o) {
 			o.value_.o = u.user_.o;
@@ -530,7 +532,7 @@ namespace cclua {
 
 		public class LClosure : ClosureHeader {
             public Proto p;
-            public UpVal[] upvalue;  /* list of upvalues */
+            public UpVal[] upvals;  /* list of upvalues */
 		}
 
 		public class Closure {
