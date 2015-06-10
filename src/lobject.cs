@@ -413,6 +413,7 @@ namespace cclua {
 		** (Access to 'extra' ensures that value is really a 'TString'.)
 		*/
 		public static byte[] getstr (TString str) { return str.data; }
+		public static string getsstr (TString str) { return byte2str (str.data); }
 
 		/* get the actual string (array of bytes) from a Lua value */
 		public static byte[] svalue (TValue o) { return getstr (tsvalue (o)); }

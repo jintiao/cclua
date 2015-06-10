@@ -391,7 +391,7 @@ namespace cclua {
         }
 
 
-        public static double lua_tointegerx (lua_State L, int idx, ref int pisnum) {
+        public static long lua_tointegerx (lua_State L, int idx, ref int pisnum) {
             long n = 0;
             TValue o = imp.index2addr (L, idx);
             bool isnum = imp.tointeger (o, ref n);
@@ -533,6 +533,21 @@ namespace cclua {
                 return imp.byte2str (imp.getstr (ts));
             }
         }
+
+
+		public static string lua_pushstring (lua_State L, string s) {
+			return null;
+		}
+		
+		
+		public static string lua_pushvfstring (lua_State L, string fmt, params object[] args) {
+			return null;
+		}
+		
+		
+		public static string lua_pushfstring (lua_State L, string s, params object[] args) {
+			return null;
+		}
 
 
         public static void lua_pushcclosure (lua_State L, lua_CFunction fn, int n) {

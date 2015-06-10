@@ -4,7 +4,13 @@ namespace cclua {
 
     public static partial class lua530 {
 
+		public static string LUA_VERSION_MAJOR = "5";
+		public static string LUA_VERSION_MINOR = "3";
 		public static long LUA_VERSION_NUM = 503;
+		public static string LUA_VERSION_RELEASE = "0";
+
+		public static string LUA_VERSION = "Lua " + LUA_VERSION_MAJOR + "." + LUA_VERSION_MINOR;
+		public static string LUA_RELEASE = LUA_VERSION + "." + LUA_VERSION_RELEASE;
 
 
         /* mark for precompiled code ('<esc>Lua') */
@@ -46,8 +52,13 @@ namespace cclua {
         public const int LUA_TTHREAD = 8;
         public const int LUA_NUMTAGS = 9;
 
+
+
+
         /* minimum Lua stack available to a C function */
         public const int LUA_MINSTACK = 20;
+
+
 
         /* predefined values in the registry */
         public const int LUA_RIDX_MAINTHREAD = 1;
@@ -110,6 +121,24 @@ namespace cclua {
 
 
 
+		/*
+		** 'load' and 'call' functions (load and run Lua code)
+		*/
+		
+		public static void lua_call (lua_State L, int n, int r) { lua_callk (L, n, r, 0, null); }
+
+		public static int lua_pcall (lua_State L, int n, int r, int f) { lua_pcallk (L, n, r, f, 0, null); }
+
+
+
+		/*
+		** coroutine functions
+		*/
+
+		public static int lua_yield (lua_State L, int r) { return lua_yieldk (L, r, 0, null); }
+
+
+
         /*
         ** garbage-collection function and options
         */
@@ -122,6 +151,55 @@ namespace cclua {
         public const int LUA_GCSETPAUSE = 6;
         public const int LUA_GCSETSTEPMUL = 7;
         public const int LUA_GCISRUNNING = 9;
+
+
+
+
+
+		/*
+		** {==============================================================
+		** some useful macros
+		** ===============================================================
+		*/
+
+		public static byte[] lua_getextraspace (lua_State L) { return L.lg.l.extra_; }
+
+		public static double lua_tonumber (lua_State L, int idx) { int i = 0; return lua_tonumberx (L, idx, ref i); }
+		public static long lua_tointeger (lua_State L, int idx) { int i = 0; return lua_tointegerx (L, idx, ref i); }
+
+		public static void lua_pop (lua_State L, int n) { lua_settop (L, -n - 1); }
+
+		public static void lua_newtable (lua_State L) { lua_createtable (L, 0, 0); }
+
+		public static void lua_register (lua_State L, int n, lua_CFunction f) { lua_pushcfunction (L, f); lua_setglobal (L, n); }
+
+		public static void lua_pushcfunction (lua_State L, lua_CFunction f) { lua_pushcclosure (L, f, 0); }
+
+		public static int lua_isfunction (lua_State L, int n) { return (lua_type (L, n) == LUA_TFUNCTION ? 1 : 0); }
+		public static int lua_istable (lua_State L, int n) { return (lua_type (L, n) == LUA_TTABLE ? 1 : 0); }
+		public static int lua_islightuserdata (lua_State L, int n) { return (lua_type (L, n) == LUA_TLIGHTUSERDATA ? 1 : 0); }
+		public static int lua_isnil (lua_State L, int n) { return (lua_type (L, n) == LUA_TNIL ? 1 : 0); }
+		public static int lua_isboolean (lua_State L, int n) { return (lua_type (L, n) == LUA_TBOOLEAN ? 1 : 0); }
+		public static int lua_isthread (lua_State L, int n) { return (lua_type (L, n) == LUA_TTHREAD ? 1 : 0); }
+		public static int lua_isnone (lua_State L, int n) { return (lua_type (L, n) == LUA_TNONE ? 1 : 0); }
+		public static int lua_isnoneornil (lua_State L, int n) { return (lua_type (L, n) <= 0 ? 1 : 0); }
+
+		public static void lua_pushliteral (lua_State L, string s) { lua_pushlstring (L, s); }
+
+		public static void lua_pushglobaltable (lua_State L) { lua_rawgeti (L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS); }
+
+		public static string lua_tostring (lua_State L, int i) { int n = 0; return lua_tolstring (L, i, ref n); }
+
+
+		public static void lua_insert (lua_State L, int idx) { lua_rotate (L, idx, 1); }
+
+		public static void lua_remove (lua_State L, int idx) { lua_rotate (L, idx, -1); lua_pop (L, 1); }
+
+		public static void lua_replace (lua_State L, int idx) { lua_copy (L, -1, idx); lua_pop (L, 1); }
+
+
+
+
 
 
 

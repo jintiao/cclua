@@ -421,37 +421,6 @@ namespace cclua {
                 e1.u.info = condjump (fs, op, cond, o1, o2);
                 e1.k = expkind.VJMP;
             }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         }
 
         /*

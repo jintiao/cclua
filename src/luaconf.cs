@@ -42,6 +42,13 @@ namespace cclua {
 		*/
 		public const int LUAI_MAXSHORTLEN = 40;
 
+		/*
+		@@ LUAL_BUFFERSIZE is the buffer size used by the lauxlib buffer system.
+		** CHANGE it if it uses too much C-stack space.
+		*/
+		public const int LUAL_BUFFERSIZE = (0x80 * sizeof (long) * sizeof (double));
+
+
         public const long LUA_MAXINTEGER = Int64.MaxValue;
         public const long LUA_MININTEGER = Int64.MinValue;
 

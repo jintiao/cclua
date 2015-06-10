@@ -143,5 +143,33 @@ namespace cclua {
             luaM_freearray (L, f.upvalues);
             luaM_free (L, f);
         }
+
+
+		/*
+		** Look for n-th local variable at line 'line' in function 'func'.
+		** Returns NULL if not found.
+		*/
+		public static string luaF_getlocalname (Proto f, int local_number, int pc) {
+			for (int i = 0; i < f.sizelocvars && f.locvars[i].startpc <= pc; i++) {
+				if (pc < f.locvars[i].endpc) {
+					local_number--;
+					if (local_number == 0)
+						return getsstr (f.locvars[i].varname);
+				}
+			}
+			return null;
+		}
+
+
+
+
+
+
+
+
+
+
+
+
     }
 }
