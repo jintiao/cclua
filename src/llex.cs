@@ -56,8 +56,8 @@ namespace cclua {
 
 
             public static void lexerror (LexState ls, string msg, int token) {
-                byte[] buff = new byte[LUA_IDSIZE];
-                luaO_chunkid (buff, getstr (ls.source), LUA_IDSIZE);
+                string buff = null;
+                luaO_chunkid (ref buff, getsstr (ls.source), LUA_IDSIZE);
                 msg = luaO_pushfstring (ls.L, "%s:%d: %s", buff, ls.linenumber, msg);
                 if (token != 0)
                     luaO_pushfstring (ls.L, "%s near %s", msg, txtToken (ls, (RESERVED)token));

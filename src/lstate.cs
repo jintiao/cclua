@@ -213,7 +213,7 @@ namespace cclua {
 			public int gcstepmul;  /* GC 'granularity' */
             public lua530.lua_CFunction panic;  /* to be called in unprotected errors */
             public lua_State mainthread;
-            public long version;  /* pointer to version number */
+            public double version;  /* pointer to version number */
             public TString memerrmsg;  /* memory-error message */
             public TString[] tmname;  /* array with tag-method names */
             public Table[] mt;  /* metatables for basic types */
@@ -447,7 +447,7 @@ namespace cclua {
         }
 
 
-        public static lua_State lua_newstate () {
+        public static lua_State lua_newstate (lua_Alloc f, object ud) {
             lua_State L;
             global_State g;
 			LG l = new LG ();
@@ -459,6 +459,8 @@ namespace cclua {
 			g.currentwhite = imp.bitmask (imp.WHITE0BIT);
 			L.marked = imp.luaC_white (g);
             imp.preinit_thread (L, g);
+            g.frealloc = f;
+            g.ud = ud;
             g.mainthread = L;
             g.seed = imp.makeseed (L);
 			g.gcrunning = 0;  /* no GC while building state */

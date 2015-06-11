@@ -198,7 +198,7 @@ namespace cclua {
         }
 
 
-		public static long lua_version (lua_State L) {
+		public static double lua_version (lua_State L) {
 			if (L == null) return LUA_VERSION_NUM;
             else return imp.G (L).version;
 		}

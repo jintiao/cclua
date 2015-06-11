@@ -66,6 +66,12 @@ namespace cclua {
 
 			/* maximum length of the conversion of a number to a string */
 			public const int MAXNUMBER2STR = 50;
+
+
+            public static string RETS = "...";
+            public static string PRE = "[string \"";
+            public static string POS = "\"]";
+
         }
         
         /*
@@ -419,6 +425,9 @@ namespace cclua {
 		public static byte[] svalue (TValue o) { return getstr (tsvalue (o)); }
         public static byte[] svalue (lua_State L, int o) { return svalue (L.stack[o]); }
 
+        public static string ssvalue (TValue o) { return byte2str (svalue (o)); }
+        public static string ssvalue (lua_State L, int o) { return ssvalue (L.stack[o]); }
+
 
 
 		/*
@@ -547,7 +556,8 @@ namespace cclua {
 		}
 
 
-		public static bool isLfunction (TValue o) { return ttisLclosure (o); }
+        public static bool isLfunction (TValue o) { return ttisLclosure (o); }
+        public static bool isLfunction (lua_State L, int o) { return isLfunction (L.stack[o]); }
 
 		public static Proto getproto (TValue o) { return clLvalue (o).p; }
 
@@ -741,7 +751,34 @@ namespace cclua {
         }
 
 
-        public static void luaO_chunkid (byte[] o, byte[] source, int bufflen) {
+        public static void luaO_chunkid (ref string o, string source, int bufflen) {
+            int l = source.Length;
+            if (source[0] == '=') {
+                if (l <= bufflen)
+                    o = source.Substring (1);
+                else
+                    o = source.Substring (1, bufflen);
+            }
+            else if (source[0] == '@') {
+                if (l <= bufflen)
+                    o = source.Substring (1);
+                else
+                    o = lobject.RETS + source.Substring (1, bufflen - lobject.RETS.Length);
+            }
+            else {
+                int nl = source.IndexOf ('\n');
+                o = lobject.PRE;
+                bufflen -= lobject.PRE.Length + lobject.RETS.Length + lobject.POS.Length;
+                if (l < bufflen && nl >= 0)
+                    o += source;
+                else {
+                    if (nl >= 0) l = nl;
+                    if (l > bufflen) l = bufflen;
+                    o += source.Substring (0, l);
+                    o += lobject.RETS;
+                }
+                o += lobject.POS;
+            }
         }
 
 

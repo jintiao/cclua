@@ -74,6 +74,7 @@ namespace cclua {
 
 
         public static string ttypename (int x) { return ltm.luaT_typenames_[x + 1]; }
+        public static string objtypename (TValue x) { return ttypename (ttnov (x)); }
 
 
 		public static void luaT_init (lua530.lua_State L) {

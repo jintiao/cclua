@@ -6,7 +6,7 @@ namespace cclua {
 
 		public static string LUA_VERSION_MAJOR = "5";
 		public static string LUA_VERSION_MINOR = "3";
-		public static long LUA_VERSION_NUM = 503;
+        public static double LUA_VERSION_NUM = 503;
 		public static string LUA_VERSION_RELEASE = "0";
 
 		public static string LUA_VERSION = "Lua " + LUA_VERSION_MAJOR + "." + LUA_VERSION_MINOR;
@@ -127,7 +127,7 @@ namespace cclua {
 		
 		public static void lua_call (lua_State L, int n, int r) { lua_callk (L, n, r, 0, null); }
 
-		public static int lua_pcall (lua_State L, int n, int r, int f) { lua_pcallk (L, n, r, f, 0, null); }
+		public static int lua_pcall (lua_State L, int n, int r, int f) { return lua_pcallk (L, n, r, f, 0, null); }
 
 
 
@@ -171,7 +171,7 @@ namespace cclua {
 
 		public static void lua_newtable (lua_State L) { lua_createtable (L, 0, 0); }
 
-		public static void lua_register (lua_State L, int n, lua_CFunction f) { lua_pushcfunction (L, f); lua_setglobal (L, n); }
+		public static void lua_register (lua_State L, string n, lua_CFunction f) { lua_pushcfunction (L, f); lua_setglobal (L, n); }
 
 		public static void lua_pushcfunction (lua_State L, lua_CFunction f) { lua_pushcclosure (L, f, 0); }
 
@@ -188,7 +188,7 @@ namespace cclua {
 
 		public static void lua_pushglobaltable (lua_State L) { lua_rawgeti (L, LUA_REGISTRYINDEX, LUA_RIDX_GLOBALS); }
 
-		public static string lua_tostring (lua_State L, int i) { int n = 0; return lua_tolstring (L, i, ref n); }
+        public static string lua_tostring (lua_State L, int i) { int n = 0; return lua_tolstring (L, i, ref n); }
 
 
 		public static void lua_insert (lua_State L, int idx) { lua_rotate (L, idx, 1); }
@@ -242,16 +242,11 @@ namespace cclua {
             public int lastlinedefined;  /* (S) */
             public byte nups;  /* (u) number of upvalues */
             public byte nparams;  /* (u) number of parameters */
-            public sbyte isvararg;  /* (u) */
-            public sbyte istailcall;  /* (t) */
-            public sbyte[] short_src;  /* (S) */
+            public byte isvararg;  /* (u) */
+            public byte istailcall;  /* (t) */
+            public string short_src;  /* (S) */
             /* private part */
             public imp.CallInfo i_ci;  /* active function */
         };
-
-        public static string lua_tostring (lua_State L, int idx) {
-            ulong m = 0;
-            return lua_tolstring (L, idx, ref m);
-        }
     }
 }

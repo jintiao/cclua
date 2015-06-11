@@ -4,6 +4,7 @@ using lua_State = cclua.lua530.lua_State;
 using lua_longjmp = cclua.lua530.lua_longjmp;
 using lua_Hook = cclua.lua530.lua_Hook;
 using lua_Debug = cclua.lua530.lua_Debug;
+using CallInfo = cclua.imp.CallInfo;
 
 namespace cclua {
 
@@ -460,5 +461,32 @@ namespace cclua {
 			public lua_longjmp previous;
 			public volatile int status;  /* error code */
 		}
+
+
+        public static int lua_yieldk (lua_State L, int nresults, long ctx, lua_KFunction k) {
+            CallInfo ci = L.ci;
+            imp.luai_userstateyield (L, nresults);
+            imp.lua_lock (L);
+            imp.api_checknelems (L, nresults);
+            if (L.nny > 0) {
+                if (L != imp.G (L).mainthread)
+                    imp.luaG_runerror (L, "attempt to yield across a C-call boundary");
+                else
+                    imp.luaG_runerror (L, "attempt to yield from outside a coroutine");
+            }
+            L.status = LUA_YIELD;
+            ci.extra = imp.savestack (L, ci.func);  /* save current 'func' */
+            if (imp.isLua (ci))  /* inside a hook? */
+                imp.api_check (k == null, "hooks cannot continue after yielding");
+            else {
+                ci.u.c.k = k;  /* is there a continuation? */
+                if (k != null) ci.u.c.ctx = ctx;  /* save context */
+                ci.func = L.top - nresults - 1;  /* protect stack below results */
+                imp.luaD_throw (L, LUA_YIELD);
+            }
+            imp.lua_assert ((ci.callstatus & imp.CIST_HOOKED) != 0);  /* must be inside a hook */
+            imp.lua_unlock (L);
+            return 0;  /* return to 'luaD_hook' */
+        }
 	}
 }
