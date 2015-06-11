@@ -268,6 +268,8 @@ namespace cclua {
 		public class luaL_Reg {
 			public string name;
 			public lua_CFunction func;
+
+			public luaL_Reg (string n, lua_CFunction f) { name = n; func = f; }
 		}
 
 
