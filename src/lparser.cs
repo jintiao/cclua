@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -613,17 +615,17 @@ namespace cclua {
 			}
 
 
-			public static void lastlistfield (FuncState fs, ConsControl cc) {
-				if (cc.tostore == 0) return;
-				if (hasmultret (cc.v.k)) {
-					luaK_setmultret (fs, cc.v);
-					luaK_setlist (fs, cc.t.u.info, cc.na, lua530.LUA_MULTRET);
-					cc.na--;  /* do not count last expression (unknown number of elements) */
+			public static void lastlistfield (FuncState fs, ConsControl ccl) {
+                if (ccl.tostore == 0) return;
+                if (hasmultret (ccl.v.k)) {
+                    luaK_setmultret (fs, ccl.v);
+                    luaK_setlist (fs, ccl.t.u.info, ccl.na, cc.LUA_MULTRET);
+                    ccl.na--;  /* do not count last expression (unknown number of elements) */
 				}
 				else {
-					if (cc.v.k != expkind.VVOID)
-						luaK_exp2nextreg (fs, cc.v);
-					luaK_setlist (fs, cc.t.u.info, cc.na, cc.tostore);
+                    if (ccl.v.k != expkind.VVOID)
+                        luaK_exp2nextreg (fs, ccl.v);
+                    luaK_setlist (fs, ccl.t.u.info, ccl.na, ccl.tostore);
 				}
 			}
 
@@ -790,7 +792,7 @@ namespace cclua {
 				lua_assert (f.k == expkind.VNONRELOC);
 				nbase = f.u.info;  /* base register for call */
 				if (hasmultret (args.k))
-					nparams = lua530.LUA_MULTRET;  /* open call */
+					nparams = cc.LUA_MULTRET;  /* open call */
 				else {
 					if (args.k != expkind.VVOID)
 						luaK_exp2nextreg (fs, args);  /* close last argument */
@@ -1460,7 +1462,7 @@ namespace cclua {
                             lua_assert (GETARG_A (fs, e.u.info) == fs.nactvar);
                         }
                         first = fs.nactvar;
-                        nret = lua530.LUA_MULTRET;  /* return all values */
+                        nret = cc.LUA_MULTRET;  /* return all values */
                     }
                     else {
                         if (nret == 1)  /* only one single value? */

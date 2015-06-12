@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -77,7 +79,7 @@ namespace cclua {
         public static string objtypename (TValue x) { return ttypename (ttnov (x)); }
 
 
-		public static void luaT_init (lua530.lua_State L) {
+		public static void luaT_init (cc.lua_State L) {
 			for (int i = 0; i < (int)TMS.TM_N; i++) {
                 G (L).tmname[i] = luaS_new (L, ltm.luaT_eventname[i]);
                 luaC_fix (L, G (L).tmname[i]);  /* never collect these names */
@@ -103,10 +105,10 @@ namespace cclua {
         public static TValue luaT_gettmbyobj (lua_State L, TValue o, TMS ev) {
             Table mt;
             switch (ttnov (o)) {
-                case lua530.LUA_TTABLE:
+                case cc.LUA_TTABLE:
                     mt = hvalue (o).metatable;
                     break;
-                case lua530.LUA_TUSERDATA:
+                case cc.LUA_TUSERDATA:
                     mt = uvalue (o).metatable;
                     break;
                 default:

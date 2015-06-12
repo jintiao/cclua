@@ -1,6 +1,8 @@
 ﻿using System;
 using System.IO;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 using lua_Debug = cclua.lua530.lua_Debug;
 
@@ -47,24 +49,24 @@ namespace cclua {
 		** return 1 + string at top if find a good name.
 		*/
 		public static bool findfield (lua_State L, int objidx, int level) {
-			if (level == 0 || lua530.lua_istable (L, -1) == 0)
+			if (level == 0 || cc.lua_istable (L, -1) == 0)
 				return false;  /* not found */
-			lua530.lua_pushnil (L);  /* start 'next' loop */
-			while (lua530.lua_next (L, -2) != 0) {  /* for each pair in table */
-				if (lua530.lua_type (L, -2) == lua530.LUA_TSTRING) {  /* ignore non-string keys */
-					if (lua530.lua_rawequal (L, objidx, -1) != 0) {  /* found object? */
-						lua530.lua_pop (L, 1);  /* remove value (but keep name) */
+			cc.lua_pushnil (L);  /* start 'next' loop */
+			while (cc.lua_next (L, -2) != 0) {  /* for each pair in table */
+				if (cc.lua_type (L, -2) == cc.LUA_TSTRING) {  /* ignore non-string keys */
+					if (cc.lua_rawequal (L, objidx, -1) != 0) {  /* found object? */
+						cc.lua_pop (L, 1);  /* remove value (but keep name) */
 						return true;
 					}
 					else if (findfield (L, objidx, level - 1)) {  /* try recursively */
-						lua530.lua_remove (L, -2);  /* remove table (but keep name) */
-						lua530.lua_pushliteral (L, ".");
-						lua530.lua_insert (L, -2);  /* place '.' between the two names */
-						lua530.lua_concat (L, 3);
+						cc.lua_remove (L, -2);  /* remove table (but keep name) */
+						cc.lua_pushliteral (L, ".");
+						cc.lua_insert (L, -2);  /* place '.' between the two names */
+						cc.lua_concat (L, 3);
 						return true;
 					}
 				}
-				lua530.lua_pop (L, 1);  /* remove value */
+				cc.lua_pop (L, 1);  /* remove value */
 			}
 			return false;  /* not found */
 		}
@@ -75,21 +77,21 @@ namespace cclua {
 		** (registry._LOADED).
 		*/
 		public static bool pushglobalfuncname (lua_State L, lua_Debug ar) {
-			int top = lua530.lua_gettop (L);
-            lua530.lua_getinfo (L, "f", ar);  /* push function */
-			lua530.lua_getfield (L, lua530.LUA_REGISTRYINDEX, "_LOADED");
+			int top = cc.lua_gettop (L);
+            cc.lua_getinfo (L, "f", ar);  /* push function */
+			cc.lua_getfield (L, cc.LUA_REGISTRYINDEX, "_LOADED");
 			if (findfield (L, top + 1, 2)) {
-				string name = lua530.lua_tostring (L, -1);
+				string name = cc.lua_tostring (L, -1);
 				if (name.Substring (0, 3) == "_G.") {  /* name start with '_G.'? */
-					lua530.lua_pushstring (L, name.Substring (3));  /* push name without prefix */
-					lua530.lua_remove (L, -2);  /* remove original name */
+					cc.lua_pushstring (L, name.Substring (3));  /* push name without prefix */
+					cc.lua_remove (L, -2);  /* remove original name */
 				}
-				lua530.lua_copy (L, -1, top + 1);  /* move name to proper place */
-				lua530.lua_pop (L, 2);  /* remove pushed values */
+				cc.lua_copy (L, -1, top + 1);  /* move name to proper place */
+				cc.lua_pop (L, 2);  /* remove pushed values */
 				return true;
 			}
 			else {
-				lua530.lua_settop (L, top);  /* remove function and global table */
+				cc.lua_settop (L, top);  /* remove function and global table */
 				return false;
 			}
 		}
@@ -97,17 +99,17 @@ namespace cclua {
 
 		public static void pushfuncname (lua_State L, lua_Debug ar) {
 			if (pushglobalfuncname (L, ar)) {  /* try first a global name */
-                lua530.lua_pushfstring (L, "function '%s'", lua530.lua_tostring (L, -1));
-				lua530.lua_remove (L, -2);  /* remove name */
+                cc.lua_pushfstring (L, "function '%s'", cc.lua_tostring (L, -1));
+				cc.lua_remove (L, -2);  /* remove name */
 			}
 			else if (ar.namewhat[0] != '\0')  /* is there a name from code? */
-				lua530.lua_pushfstring (L, "%s %s", ar.namewhat, ar.name);  /* use it */
+				cc.lua_pushfstring (L, "%s %s", ar.namewhat, ar.name);  /* use it */
             else if (ar.what[0] == 'm')  /* main? */
-				lua530.lua_pushliteral (L, "main chunk");
+				cc.lua_pushliteral (L, "main chunk");
             else if (ar.what[0] != 'C')  /* for Lua functions, use <file:line> */
-				lua530.lua_pushfstring (L, "function <%s:%d>", ar.short_src, ar.linedefined);
+				cc.lua_pushfstring (L, "function <%s:%d>", ar.short_src, ar.linedefined);
 			else  /* nothing left... */
-				lua530.lua_pushliteral (L, "?");
+				cc.lua_pushliteral (L, "?");
 		}
 
 
@@ -115,10 +117,10 @@ namespace cclua {
 			lua_Debug ar = new lua_Debug ();
 			int li = 1;
 			int le = 1;
-			while (lua530.lua_getstack (L, le, ar) != 0) { li = le; le *= 2; }
+			while (cc.lua_getstack (L, le, ar) != 0) { li = le; le *= 2; }
 			while (li < le) {
 				int m = (li + le) / 2;
-				if (lua530.lua_getstack (L, m, ar) != 0) li = m + 1;
+				if (cc.lua_getstack (L, m, ar) != 0) li = m + 1;
 				else le = m;
 			}
 			return le - 1;
@@ -127,19 +129,19 @@ namespace cclua {
 
         public static int typeerror (lua_State L, int arg, string tname) {
             string typearg = null;
-            if (lua530.luaL_getmetafield (L, arg, "__name") == lua530.LUA_TSTRING)
-                typearg = lua530.lua_tostring (L, -1);
-            else if (lua530.lua_type (L, arg) == lua530.LUA_TLIGHTUSERDATA)
+            if (cc.luaL_getmetafield (L, arg, "__name") == cc.LUA_TSTRING)
+                typearg = cc.lua_tostring (L, -1);
+            else if (cc.lua_type (L, arg) == cc.LUA_TLIGHTUSERDATA)
                 typearg = "light userdata";
             else
-                typearg = lua530.luaL_typename (L, arg);
-            string msg = lua530.lua_pushfstring (L, "%s expected, got %s", tname, typearg);
-            return lua530.luaL_argerror (L, arg, msg);
+                typearg = cc.luaL_typename (L, arg);
+            string msg = cc.lua_pushfstring (L, "%s expected, got %s", tname, typearg);
+            return cc.luaL_argerror (L, arg, msg);
         }
 
 
         public static void tag_error (lua_State L, int arg, int tag) {
-            typeerror (L, arg, lua530.lua_typename (L, tag));
+            typeerror (L, arg, cc.lua_typename (L, tag));
         }
 
 
@@ -150,10 +152,10 @@ namespace cclua {
 
 
         public static void interror (lua_State L, int arg) {
-            if (lua530.lua_isnumber (L, arg) != 0)
-                lua530.luaL_argerror (L, arg, "number has no integer representation");
+            if (cc.lua_isnumber (L, arg) != 0)
+                cc.luaL_argerror (L, arg, "number has no integer representation");
             else
-                tag_error (L, arg, lua530.LUA_TNUMBER);
+                tag_error (L, arg, cc.LUA_TNUMBER);
         }
 
 
@@ -192,10 +194,10 @@ namespace cclua {
         public static int errfile (lua_State L, string what, int fnameindex) {
             // TODO: errno
             string serr = imp.strerror (0);
-            string filename = lua530.lua_tostring (L, fnameindex).Substring (1);
-            lua530.lua_pushfstring (L, "cannot %s %s: %s", what, filename, serr);
-            lua530.lua_remove (L, fnameindex);
-            return lua530.LUA_ERRFILE;
+            string filename = cc.lua_tostring (L, fnameindex).Substring (1);
+            cc.lua_pushfstring (L, "cannot %s %s: %s", what, filename, serr);
+            cc.lua_remove (L, fnameindex);
+            return cc.LUA_ERRFILE;
         }
 
 
@@ -249,12 +251,12 @@ namespace cclua {
         }
 
 
-        public class l_alloc : lua530.lua_Alloc {
+        public class l_alloc : cc.lua_Alloc {
         }
 
 		
 		public static int panic (lua_State L) {
-            imp.lua_writestringerror ("PANIC: unprotected error in call to Lua API (%s)\n", lua530.lua_tostring (L, -1));
+            imp.lua_writestringerror ("PANIC: unprotected error in call to Lua API (%s)\n", cc.lua_tostring (L, -1));
 			return 0; /* return to Lua to abort */
 		}
 	}

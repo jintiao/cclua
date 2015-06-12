@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -204,7 +206,7 @@ namespace cclua {
                             g.GCmemtrav += OBJ_SIZE;
                             break;
                         }
-                        case lua530.LUA_TUSERDATA: {
+                        case cc.LUA_TUSERDATA: {
                             markobject (g, gco2u (o).metatable);  /* mark its metatable */
                             gray2black (o);
                             g.GCmemtrav += OBJ_SIZE;
@@ -228,13 +230,13 @@ namespace cclua {
                             g.gray = v;
                             break;
                         }
-                        case lua530.LUA_TTABLE: {
+                        case cc.LUA_TTABLE: {
                             Table v = gco2t (o);
                             v.gclist = g.gray;
                             g.gray = v;
                             break;
                         }
-                        case lua530.LUA_TTHREAD: {
+                        case cc.LUA_TTHREAD: {
                             lua_State v = gco2th (o);
                             v.gclist = g.gray;
                             g.gray = v;
@@ -255,7 +257,7 @@ namespace cclua {
             ** mark metamethods for basic types
             */
             public static void markmt (global_State g) {
-                for (int i = 0; i < lua530.LUA_NUMTAGS; i++)
+                for (int i = 0; i < cc.LUA_NUMTAGS; i++)
                     markobject (g, g.mt[i]);
             }
 
@@ -533,7 +535,7 @@ namespace cclua {
                 lua_assert (isgray (o));
                 gray2black (o);
                 switch (o.tt) {
-                    case lua530.LUA_TTABLE: {
+                    case cc.LUA_TTABLE: {
                         Table h = gco2t (o);
                         g.gray = h.gclist;  /* remove from 'gray' list */
                         size = traversetable (g, h);
@@ -551,7 +553,7 @@ namespace cclua {
                             size = traverseCclosure (g, cl);
                             break;
                         }
-                    case lua530.LUA_TTHREAD: {
+                    case cc.LUA_TTHREAD: {
                         lua_State th = gco2th (o);
                         g.gray = th.gclist;  /* remove from 'gray' list */
                         th.gclist = g.grayagain;  /* insert into 'grayagain' list */
@@ -660,9 +662,9 @@ namespace cclua {
                     case LUA_TPROTO: luaF_freeproto (L, gco2p (o)); break;
                     case LUA_TLCL: freeLclosure (L, gco2lcl (o)); break;
                     case LUA_TCCL:  luaM_free (L, o); break;
-                    case lua530.LUA_TTABLE: luaH_free (L, gco2t (o)); break;
-                    case lua530.LUA_TTHREAD: luaE_freethread (L, gco2th (o)); break;
-                    case lua530.LUA_TUSERDATA: luaM_free (L, o); break;
+                    case cc.LUA_TTABLE: luaH_free (L, gco2t (o)); break;
+                    case cc.LUA_TTHREAD: luaE_freethread (L, gco2th (o)); break;
+                    case cc.LUA_TUSERDATA: luaM_free (L, o); break;
                     case LUA_TSHRSTR: luaS_remove (L, gco2ts (o)); goto case LUA_TLNGSTR;
                     case LUA_TLNGSTR: luaM_free (L, o); break;
                     default: lua_assert (false); return;
@@ -772,11 +774,11 @@ namespace cclua {
                     int status = luaD_pcall (L, dothecall, null, savestack (L, L.top - 2), 0);
                     L.allowhook = oldah;  /* restore hooks */
                     g.gcrunning = running;  /* restore state */
-                    if (status != lua530.LUA_OK && propagateerrors != 0) {  /* error while running __gc? */
-                        if (status == lua530.LUA_ERRRUN) {  /* is there an error object? */
+                    if (status != cc.LUA_OK && propagateerrors != 0) {  /* error while running __gc? */
+                        if (status == cc.LUA_ERRRUN) {  /* is there an error object? */
                             string msg = (ttisstring (L, L.top - 1)) ? byte2str (svalue (L, L.top - 1)) : "no message";
                             luaO_pushfstring (L, "error in __gc metamethod (%s)", msg);
-                            status = lua530.LUA_ERRGCMM;  /* error in __gc metamethod */
+                            status = cc.LUA_ERRGCMM;  /* error in __gc metamethod */
                         }
                         luaD_throw (L, status);  /* re-throw error */
                     }

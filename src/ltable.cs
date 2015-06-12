@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -61,7 +63,7 @@ namespace cclua {
             */
             public static bool numisinteger (double x, ref long p) {
                 if (x == l_floor (x))  /* integral value? */
-                    return lua530.lua_numbertointeger (x, ref p);  /* try as an integer */
+                    return cc.lua_numbertointeger (x, ref p);  /* try as an integer */
                 else return false;
             }
 
@@ -127,9 +129,9 @@ namespace cclua {
                         }
                         return hashstr (t, tsvalue (key));
                     }
-                    case lua530.LUA_TBOOLEAN:
+                    case cc.LUA_TBOOLEAN:
                         return hashboolean (t, bvalue (key));
-                    case lua530.LUA_TLIGHTUSERDATA:
+                    case cc.LUA_TLIGHTUSERDATA:
                         return hashpointer (t, pvalue (key));
                     case LUA_TLCF:
 					return hashpointer (t, key); /* fvalue (key) */
@@ -433,7 +435,7 @@ namespace cclua {
 
 
         public static Table luaH_new (lua_State L) {
-            Table t = luaC_newobj<Table> (L, lua530.LUA_TTABLE);
+            Table t = luaC_newobj<Table> (L, cc.LUA_TTABLE);
             t.metatable = null;
             t.flags = unchecked ((byte)(~0u));
             t.array = null;
@@ -559,7 +561,7 @@ namespace cclua {
             switch (ttype (key)) {
                 case LUA_TSHRSTR: return luaH_getstr (t, tsvalue (key));
                 case LUA_TNUMINT: return luaH_getint (t, ivalue (key));
-                case lua530.LUA_TNIL: return luaO_nilobject;
+                case cc.LUA_TNIL: return luaO_nilobject;
                 case LUA_TNUMFLT: {
                     long k = 0;
                     if (ltable.numisinteger (fltvalue (key), ref k))  /* index is int? */

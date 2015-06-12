@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 using CallInfo = cclua.imp.CallInfo;
 using TValue = cclua.imp.TValue;
@@ -28,10 +30,10 @@ namespace cclua {
         public static bool isvalid (TValue o) { return (o != luaO_nilobject); }
 
         /* test for pseudo index */
-        public static bool ispseudo (int i) { return (i <= lua530.LUA_REGISTRYINDEX); }
+        public static bool ispseudo (int i) { return (i <= cc.LUA_REGISTRYINDEX); }
 
         /* test for upvalue */
-        public static bool isupvalue (int i) { return (i < lua530.LUA_REGISTRYINDEX); }
+        public static bool isupvalue (int i) { return (i < cc.LUA_REGISTRYINDEX); }
 
         /* test for valid but not pseudo index */
         public static bool isstackindex (int i, TValue o) { return (isvalid (o) && (ispseudo (i) == false)); }
@@ -43,7 +45,7 @@ namespace cclua {
 
         public static void api_incr_top (lua_State L) { L.top++; api_check (L.top <= L.ci.top, "stack overflow"); }
 
-        public static void adjustresults (lua_State L, int nres) { if (nres == lua530.LUA_MULTRET && L.ci.top < L.top) L.ci.top = L.top; }
+        public static void adjustresults (lua_State L, int nres) { if (nres == cc.LUA_MULTRET && L.ci.top < L.top) L.ci.top = L.top; }
 
         public static void api_checknelems (lua_State L, int n) { api_check (n < (L.top - L.ci.func), "not enough elements in the stack"); }
 
@@ -60,10 +62,10 @@ namespace cclua {
                 api_check (idx != 0 && -idx <= L.top - (ci.func + 1), "invalid index");
                 return L.stack[L.top + idx];
             }
-            else if (idx == lua530.LUA_REGISTRYINDEX)
+            else if (idx == cc.LUA_REGISTRYINDEX)
                 return G (L).l_registry;
             else {  /* upvalues */
-                idx = lua530.LUA_REGISTRYINDEX - idx;
+                idx = cc.LUA_REGISTRYINDEX - idx;
                 api_check (idx <= MAXUPVAL + 1, "upvalue index too large");
                 if (ttislcf (L.stack[ci.func]))  /* light C function? */
                     return lapi.NONVALIDVALUE;  /* it has no upvalues */
@@ -101,7 +103,7 @@ namespace cclua {
 
 
         public static void checkresults (lua_State L, int na, int nr) {
-            api_check (nr == lua530.LUA_MULTRET || (L.ci.top - L.top >= nr - na), "results from function overflow current stack size");
+            api_check (nr == cc.LUA_MULTRET || (L.ci.top - L.top >= nr - na), "results from function overflow current stack size");
         }
 
 

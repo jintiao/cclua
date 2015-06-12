@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -46,7 +48,7 @@ namespace cclua {
             T[] newblock = luaM_emptyvector<T> (L, nsize);
 			if (newblock == null && nsize > 0) {
 				api_check (nsize > realosize, "realloc cannot fail when shrinking a block");
-				luaD_throw (L, lua530.LUA_ERRMEM);
+				luaD_throw (L, cc.LUA_ERRMEM);
 			}
 			lua_assert ((nsize == 0) == (newblock == null));
             long minsize = Math.Min (osize, nsize);

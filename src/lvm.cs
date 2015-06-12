@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -54,7 +56,7 @@ namespace cclua {
                             else if (mode > 1)  /* needs ceil? */
                                 f += 1;  /* convert floor to ceil (remember: n != f) */
                         }
-                        return lua530.lua_numbertointeger (f, ref p);
+                        return cc.lua_numbertointeger (f, ref p);
                     }
                     else if (ttisinteger (obj)) {
                         p = ivalue (obj);
@@ -312,7 +314,7 @@ namespace cclua {
         */
         public static bool luaV_equalobj (lua_State L, TValue t1, TValue t2) {
             if (ttype (t1) != ttype (t2)) {  /* not the same variant? */
-                if (ttnov (t1) != ttnov (t2) || ttnov (t1) != lua530.LUA_TNUMBER)
+                if (ttnov (t1) != ttnov (t2) || ttnov (t1) != cc.LUA_TNUMBER)
                     return false;  /* only numbers can be equal with different variants */
                 else {  /* two numbers with different variants */
                     lua_assert (ttisnumber (t1) && ttisnumber (t2));
@@ -326,15 +328,15 @@ namespace cclua {
             /* values have same type and same variant */
             TValue tm;
             switch (ttype (t1)) {
-            case lua530.LUA_TNIL: return true;
+            case cc.LUA_TNIL: return true;
             case LUA_TNUMINT: return (ivalue (t1) == ivalue (t2));
 			case LUA_TNUMFLT: return luai_numeq (fltvalue (t1), fltvalue (t2));
-			case lua530.LUA_TBOOLEAN: return (bvalue (t1) == bvalue (t2));  /* true must be 1 !! */
-            case lua530.LUA_TLIGHTUSERDATA: return (pvalue (t1) == pvalue (t2));
+			case cc.LUA_TBOOLEAN: return (bvalue (t1) == bvalue (t2));  /* true must be 1 !! */
+            case cc.LUA_TLIGHTUSERDATA: return (pvalue (t1) == pvalue (t2));
 			case LUA_TLCF: return (fvalue (t1) == fvalue (t2));
 			case LUA_TSHRSTR: return eqshrstr (tsvalue (t1), tsvalue (t2));
 			case LUA_TLNGSTR: return luaS_eqlngstr (tsvalue (t1), tsvalue (t2));
-            case lua530.LUA_TUSERDATA: {
+            case cc.LUA_TUSERDATA: {
 				if (uvalue (t1) == uvalue (t2)) return true;
 				else if (L == null) return false;
 				tm = fasttm (L, uvalue (t1).metatable, TMS.TM_EQ);
@@ -342,7 +344,7 @@ namespace cclua {
 					tm = fasttm (L, uvalue (t2).metatable, TMS.TM_EQ);
 				break;  /* will try TM */
 			}
-            case lua530.LUA_TTABLE: {
+            case cc.LUA_TTABLE: {
 				if (hvalue (t1) == hvalue (t2)) return true;
 				else if (L == null) return false;
 				tm = fasttm (L, hvalue (t1).metatable, TMS.TM_EQ);
@@ -407,14 +409,14 @@ namespace cclua {
 		public static void luaV_objlen (lua_State L, int ra, TValue rb) {
 			TValue tm;
 			switch (ttnov (rb)) {
-                case lua530.LUA_TTABLE: {
+                case cc.LUA_TTABLE: {
 				Table h = hvalue (rb);
 				tm = fasttm (L, h, TMS.TM_LEN);
 				if (tm != null) break;  /* metamethod? break switch to call it */
 				setivalue (L, ra, luaH_getn (h));  /* else primitive len */
 				return;
 			}
-                case lua530.LUA_TSTRING: {
+                case cc.LUA_TSTRING: {
 				setivalue (L, ra, tsvalue (rb).len);
 				return;
 			}

@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 using lua_Alloc = cclua.lua530.lua_Alloc;
 using GCObject = cclua.imp.GCObject;
@@ -30,7 +32,7 @@ namespace cclua {
 
         private static class lstate {
 
-            public const int BASIC_STACK_SIZE = 2 * lua530.LUA_MINSTACK;			
+            public const int BASIC_STACK_SIZE = 2 * cc.LUA_MINSTACK;			
 
 			public const string MEMERRMSG = "not enough memory";
 
@@ -65,7 +67,7 @@ namespace cclua {
                 ci.callstatus = 0;
                 ci.func = L1.top;
                 setnilvalue (L1.stack[L1.top++]);  /* 'function' entry for this 'ci' */
-                ci.top = L1.top + lua530.LUA_MINSTACK;
+                ci.top = L1.top + cc.LUA_MINSTACK;
                 L1.ci = ci;
             }
 
@@ -84,14 +86,14 @@ namespace cclua {
                 /* create registry */
                 Table registry = luaH_new (L);
                 sethvalue (L, g.l_registry, registry);
-                luaH_resize (L, registry, lua530.LUA_RIDX_LAST, 0);
+                luaH_resize (L, registry, cc.LUA_RIDX_LAST, 0);
                 /* registry[LUA_RIDX_MAINTHREAD] = L */
 				TValue temp = luaM_newobject<TValue> (L);
 				setthvalue (L, temp, L);  /* temp = L */
-                luaH_setint (L, registry, lua530.LUA_RIDX_MAINTHREAD, temp);
+                luaH_setint (L, registry, cc.LUA_RIDX_MAINTHREAD, temp);
                 /* registry[LUA_RIDX_GLOBALS] = table of globals */
 				sethvalue (L, temp, luaH_new (L));  /* temp = new table (global table) */
-                luaH_setint (L, registry, lua530.LUA_RIDX_GLOBALS, temp);
+                luaH_setint (L, registry, cc.LUA_RIDX_GLOBALS, temp);
 			}
         }
 
@@ -127,22 +129,22 @@ namespace cclua {
         ** function can be called with the correct top.
         */
         public class CallInfo {
-            public class lc {
+            public class cil {
                 public int fbase;  /* base for this function */
                 public int savedpc;
             }
-            public class cc {
-                public lua530.lua_KFunction k;  /* continuation in case of yields */
+            public class cic {
+                public cc.lua_KFunction k;  /* continuation in case of yields */
                 public int old_errfunc;
                 public long ctx;  /* context info. in case of yields */
             }
             public class uc {
-                public lc l;  /* only for Lua functions */
-                public cc c;  /* only for C functions */
+                public cil l;  /* only for Lua functions */
+                public cic c;  /* only for C functions */
 
                 public uc () {
-					l = luaM_newobject<lc> (null);
-					c = luaM_newobject<cc> (null);
+                    l = luaM_newobject<cil> (null);
+                    c = luaM_newobject<cic> (null);
                 }
             }
 
@@ -211,7 +213,7 @@ namespace cclua {
 			public long gcfinnum;  /* number of finalizers to call in each GC step */
 			public int gcpause;  /* size of pause between successive GCs */
 			public int gcstepmul;  /* GC 'granularity' */
-            public lua530.lua_CFunction panic;  /* to be called in unprotected errors */
+            public cc.lua_CFunction panic;  /* to be called in unprotected errors */
             public lua_State mainthread;
             public double version;  /* pointer to version number */
             public TString memerrmsg;  /* memory-error message */
@@ -223,7 +225,7 @@ namespace cclua {
                 l_registry = luaM_newobject<TValue> (null);
                 buff = luaM_newobject<MBuffer> (null);
                 tmname = luaM_emptyvector<TString> (null, (int)TMS.TM_N);
-                mt = luaM_emptyvector<Table> (null, lua530.LUA_NUMTAGS);
+                mt = luaM_emptyvector<Table> (null, cc.LUA_NUMTAGS);
             }
         }
 
@@ -263,14 +265,14 @@ namespace cclua {
 
 
         /* macros to convert a GCObject into a specific value */
-        public static TString gco2ts (GCObject o) { return check_exp<TString> (novariant (o.tt) < lua530.LUA_TSTRING, o); }
-        public static Udata gco2u (GCObject o) { return check_exp<Udata> (novariant (o.tt) < lua530.LUA_TUSERDATA, o); }
+        public static TString gco2ts (GCObject o) { return check_exp<TString> (novariant (o.tt) < cc.LUA_TSTRING, o); }
+        public static Udata gco2u (GCObject o) { return check_exp<Udata> (novariant (o.tt) < cc.LUA_TUSERDATA, o); }
         public static LClosure gco2lcl (GCObject o) { return check_exp<LClosure> (novariant (o.tt) < LUA_TLCL, o); }
         public static CClosure gco2ccl (GCObject o) { return check_exp<CClosure> (novariant (o.tt) < LUA_TCCL, o); }
-        public static Udata gco2cl (GCObject o) { return check_exp<Udata> (novariant (o.tt) < lua530.LUA_TFUNCTION, o); }
-        public static Table gco2t (GCObject o) { return check_exp<Table> (novariant (o.tt) < lua530.LUA_TTABLE, o); }
+        public static Udata gco2cl (GCObject o) { return check_exp<Udata> (novariant (o.tt) < cc.LUA_TFUNCTION, o); }
+        public static Table gco2t (GCObject o) { return check_exp<Table> (novariant (o.tt) < cc.LUA_TTABLE, o); }
         public static Proto gco2p (GCObject o) { return check_exp<Proto> (novariant (o.tt) < LUA_TPROTO, o); }
-        public static lua_State gco2th (GCObject o) { return check_exp<lua_State> (novariant (o.tt) < lua530.LUA_TTHREAD, o); }
+        public static lua_State gco2th (GCObject o) { return check_exp<lua_State> (novariant (o.tt) < cc.LUA_TTHREAD, o); }
 
 
         /* macro to convert a Lua object into a GCObject */
@@ -363,7 +365,7 @@ namespace cclua {
 			/* pre-create memory-error message */
 			g.memerrmsg = luaS_newliteral (L, lstate.MEMERRMSG);
 			luaC_fix (L, g.memerrmsg);  /* it should never be collected */
-			g.version = lua530.lua_version (null);
+			g.version = cc.lua_version (null);
 			luai_userstateopen (L);
         }
 		
@@ -384,7 +386,7 @@ namespace cclua {
 			resethookcount (L);
 			L.openupval = null;
 			L.nny = 1;
-			L.status = lua530.LUA_OK;
+			L.status = cc.LUA_OK;
 			L.errfunc = 0;
 		}
 		
@@ -491,7 +493,7 @@ namespace cclua {
 			g.gcpause = imp.LUAI_GCPAUSE;
 			g.gcstepmul = imp.LUAI_GCMUL;
             for (int i = 0; i < LUA_NUMTAGS; i++) g.mt[i] = null;
-            if (imp.luaD_rawrunprotected (L, imp.f_luaopen, null) != lua530.LUA_OK) {
+            if (imp.luaD_rawrunprotected (L, imp.f_luaopen, null) != cc.LUA_OK) {
                 /* memory allocation error: free partial state */
                 imp.close_state (L);
                 L = null;

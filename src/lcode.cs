@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -325,18 +327,18 @@ namespace cclua {
             */
             public static bool validop (int op, TValue v1, TValue v2) {
                 switch (op) {
-                    case lua530.LUA_OPBAND: goto case lua530.LUA_OPBNOT;
-                    case lua530.LUA_OPBOR: goto case lua530.LUA_OPBNOT;
-                    case lua530.LUA_OPBXOR: goto case lua530.LUA_OPBNOT;
-                    case lua530.LUA_OPSHL: goto case lua530.LUA_OPBNOT;
-                    case lua530.LUA_OPSHR: goto case lua530.LUA_OPBNOT;
-                    case lua530.LUA_OPBNOT: {  /* conversion errors */
+                    case cc.LUA_OPBAND: goto case cc.LUA_OPBNOT;
+                    case cc.LUA_OPBOR: goto case cc.LUA_OPBNOT;
+                    case cc.LUA_OPBXOR: goto case cc.LUA_OPBNOT;
+                    case cc.LUA_OPSHL: goto case cc.LUA_OPBNOT;
+                    case cc.LUA_OPSHR: goto case cc.LUA_OPBNOT;
+                    case cc.LUA_OPBNOT: {  /* conversion errors */
                         long i = 0;
                         return (tointeger (v1, ref i) && tointeger (v2, ref i));
                     }
-                    case lua530.LUA_OPDIV: goto case lua530.LUA_OPMOD;
-                    case lua530.LUA_OPIDIV: goto case lua530.LUA_OPMOD;
-                    case lua530.LUA_OPMOD: {  /* division by 0 */
+                    case cc.LUA_OPDIV: goto case cc.LUA_OPMOD;
+                    case cc.LUA_OPIDIV: goto case cc.LUA_OPMOD;
+                    case cc.LUA_OPMOD: {  /* division by 0 */
                         return (nvalue (v2) != 0);
                     }
                     default: return true;  /* everything else is valid */
@@ -378,7 +380,7 @@ namespace cclua {
             */
             public static void codeexpval (FuncState fs, OpCode op, expdesc e1, expdesc e2, int line) {
                 lua_assert (op >= OpCode.OP_ADD);
-                if (op <= OpCode.OP_BNOT && constfolding (fs, op - OpCode.OP_ADD + lua530.LUA_OPADD, e1, e2))
+                if (op <= OpCode.OP_BNOT && constfolding (fs, op - OpCode.OP_ADD + cc.LUA_OPADD, e1, e2))
                     return;  /* result has been folded */
                 else {
                     int o1;
@@ -641,7 +643,7 @@ namespace cclua {
         }
 
 
-		public static void luaK_setmultret (FuncState fs, expdesc e) { luaK_setreturns (fs, e, lua530.LUA_MULTRET); }
+		public static void luaK_setmultret (FuncState fs, expdesc e) { luaK_setreturns (fs, e, cc.LUA_MULTRET); }
 
 
         public static void luaK_setoneret (FuncState fs, expdesc e) {
@@ -994,7 +996,7 @@ namespace cclua {
 
         public static void luaK_setlist (FuncState fs, int nbase, int nelems, int tostore) {
             int c = (nelems - 1) / LFIELDS_PER_FLUSH + 1;
-            int b = (tostore == lua530.LUA_MULTRET) ? 0 : tostore;
+            int b = (tostore == cc.LUA_MULTRET) ? 0 : tostore;
             lua_assert (tostore != 0);
             if (c <= MAXARG_C)
                 luaK_codeABC (fs, OpCode.OP_SETLIST, nbase, b, c);

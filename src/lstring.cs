@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Text;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -185,7 +187,7 @@ namespace cclua {
         public static Udata luaS_newudata (lua_State L, int s) {
             if (s > MAX_SIZE)
                 luaM_toobig (L);
-            Udata u = luaC_newobj<Udata> (L, lua530.LUA_TUSERDATA);
+            Udata u = luaC_newobj<Udata> (L, cc.LUA_TUSERDATA);
             u.len = s;
             u.metatable = null;
             setuservalue (L, u, luaO_nilobject);

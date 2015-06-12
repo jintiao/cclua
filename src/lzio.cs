@@ -1,5 +1,6 @@
 ﻿using System;
 
+using cc = cclua.lua530;
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -19,7 +20,7 @@ namespace cclua {
         public class Zio {
             public int n;  /* bytes still unread */
             public byte[] p;  /* current position in buffer */
-            public lua530.lua_Reader reader;  /* reader function */
+            public cc.lua_Reader reader;  /* reader function */
             public object data;  /* additional data */
             public lua_State L;  /* Lua state (for reader) */
         }
@@ -63,7 +64,7 @@ namespace cclua {
         }
 
 
-        public static void luaZ_init (lua_State L, Zio z, lua530.lua_Reader reader, object data) {
+        public static void luaZ_init (lua_State L, Zio z, cc.lua_Reader reader, object data) {
             z.L = L;
             z.reader = reader;
             z.data = data;

@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 using lua_longjmp = cclua.lua530.lua_longjmp;
 using lua_Hook = cclua.lua530.lua_Hook;
@@ -47,11 +49,11 @@ namespace cclua {
 
 			public static void seterrorobj (lua_State L, int errcode, int oldtop) {
 				switch (errcode) {
-				case lua530.LUA_ERRMEM: {  /* memory error? */
+				case cc.LUA_ERRMEM: {  /* memory error? */
 					setsvalue2s (L, L.stack[oldtop], G (L).memerrmsg);  /* reuse preregistered msg. */
 					break;					         
 				}
-				case lua530.LUA_ERRERR: {
+				case cc.LUA_ERRERR: {
 					setsvalue2s (L, L.stack[oldtop], luaS_newliteral (L, "error in error handling"));
 					break;
 				}
@@ -81,7 +83,7 @@ namespace cclua {
 
 
             public static void callhook (lua_State L, CallInfo ci) {
-                int hook = lua530.LUA_HOOKCALL;
+                int hook = cc.LUA_HOOKCALL;
                 ci.u.l.savedpc++;  /* hooks assume 'pc' is already incremented */
                 luaD_hook (L, hook, -1);
                 ci.u.l.savedpc--;
@@ -144,7 +146,7 @@ namespace cclua {
                 if (mode != null && mode.IndexOf (x[0]) < 0) {
                     luaO_pushfstring (L,
                         "attempt to load a %s chunk (mode is '%s')", x, mode);
-                    luaD_throw (L, lua530.LUA_ERRSYNTAX);
+                    luaD_throw (L, cc.LUA_ERRSYNTAX);
                 }
             }
 
@@ -153,7 +155,7 @@ namespace cclua {
                 LClosure cl = null;
                 SParser p = (SParser)ud;
                 int c = zgetc (p.z);  /* read first character */
-                if (c == lua530.LUA_SIGNATURE[0]) {
+                if (c == cc.LUA_SIGNATURE[0]) {
                 }
                 else {
                     checkmode (L, p.mode, "text");
@@ -213,7 +215,7 @@ namespace cclua {
 		public static int luaD_rawrunprotected (lua_State L, Pfunc f, object ud) {
             ushort oldCcalls = L.nCcalls;
 			lua_longjmp lj = luaM_newobject<lua_longjmp> (L);
-            lj.status = lua530.LUA_OK;
+            lj.status = cc.LUA_OK;
             lj.previous = L.errorJmp;  /* chain new error handler */
             L.errorJmp = lj;
 			ldo.LUAI_TRY (L, f, ud, lj);
@@ -240,7 +242,7 @@ namespace cclua {
         public static void luaD_growstack (lua_State L, int n) {
             int size = L.stacksize;
             if (size > LUAI_MAXSTACK)  /* error after extra size? */
-                luaD_throw (L, lua530.LUA_ERRERR);
+                luaD_throw (L, cc.LUA_ERRERR);
             else {
                 int needed = L.top + n + EXTRA_STACK;
                 int newsize = 2 * size;
@@ -282,8 +284,8 @@ namespace cclua {
                 ar.ev = ev;
                 ar.currentline = line;
                 ar.i_ci = ci;
-                luaD_checkstack (L, lua530.LUA_MINSTACK);  /* ensure minimum stack size */
-                ci.top = L.top + lua530.LUA_MINSTACK;
+                luaD_checkstack (L, cc.LUA_MINSTACK);  /* ensure minimum stack size */
+                ci.top = L.top + cc.LUA_MINSTACK;
                 lua_assert (ci.top <= L.stack_last);
                 L.allowhook = 0;  /* cannot call hooks inside a hook */
                 ci.callstatus |= CIST_HOOKED;
@@ -308,19 +310,19 @@ namespace cclua {
             int funcr = savestack (L, func);
             int tt = ttype (L.stack[func]);
             if (tt == LUA_TLCF || tt == LUA_TCCL) {
-                lua530.lua_CFunction f = null;
+                cc.lua_CFunction f = null;
                 if (tt == LUA_TLCF) f = fvalue (L.stack[func]);  /* light C function */
                 if (tt == LUA_TCCL) f = clCvalue (L.stack[func]).f;  /* C closure */
-                luaD_checkstack (L, lua530.LUA_MINSTACK);  /* ensure minimum stack size */
+                luaD_checkstack (L, cc.LUA_MINSTACK);  /* ensure minimum stack size */
                 ci = ldo.next_ci (L);  /* now 'enter' new function */
                 ci.nresults = (short)nresult;
                 ci.func = restorestack (L, funcr);
-                ci.top = L.top + lua530.LUA_MINSTACK;
+                ci.top = L.top + cc.LUA_MINSTACK;
                 lua_assert (ci.top <= L.stack_last);
                 ci.callstatus = 0;
                 luaC_checkGC (L);  /* stack grow uses memory */
-                if ((L.hookmask & lua530.LUA_MASKCALL) != 0)
-                    luaD_hook (L, lua530.LUA_HOOKCALL, -1);
+                if ((L.hookmask & cc.LUA_MASKCALL) != 0)
+                    luaD_hook (L, cc.LUA_HOOKCALL, -1);
                 lua_unlock (L);
                 n = f (L);  /* do the actual call */
                 lua_lock (L);
@@ -353,7 +355,7 @@ namespace cclua {
                 ci.callstatus = CIST_LUA;
                 L.top = ci.top;
                 luaC_checkGC (L);  /* stack grow uses memory */
-                if ((L.hookmask & lua530.LUA_MASKCALL) != 0)
+                if ((L.hookmask & cc.LUA_MASKCALL) != 0)
                     ldo.callhook (L, ci);
                 return 0;
 
@@ -369,10 +371,10 @@ namespace cclua {
 
         public static int luaD_poscall (lua_State L, int firstResult) {
             CallInfo ci = L.ci;
-            if ((L.hookmask & (lua530.LUA_MASKRET | lua530.LUA_MASKLINE)) != 0) {
-                if ((L.hookmask & lua530.LUA_MASKRET) != 0) {
+            if ((L.hookmask & (cc.LUA_MASKRET | cc.LUA_MASKLINE)) != 0) {
+                if ((L.hookmask & cc.LUA_MASKRET) != 0) {
                     int fr = savestack (L, firstResult);
-                    luaD_hook (L, lua530.LUA_HOOKRET, -1);
+                    luaD_hook (L, cc.LUA_HOOKRET, -1);
                     firstResult = restorestack (L, fr);
                 }
                 L.oldpc = ci.previous.u.l.savedpc;  /* 'oldpc' for caller function */
@@ -388,7 +390,7 @@ namespace cclua {
             while (i-- > 0)
                 setnilvalue (L.stack[res++]);
             L.top = res;
-            return (wanted - lua530.LUA_MULTRET);  /* 0 iff wanted == LUA_MULTRET */
+            return (wanted - cc.LUA_MULTRET);  /* 0 iff wanted == LUA_MULTRET */
         }
 
 
@@ -403,7 +405,7 @@ namespace cclua {
                 if (L.nCcalls == LUAI_MAXCCALLS)
                     luaG_runerror (L, "C stack overflow");
                 else if (L.nCcalls >= (LUAI_MAXCCALLS + (LUAI_MAXCCALLS >> 3)))
-                    luaD_throw (L, lua530.LUA_ERRERR);  /* error while handing stack error */
+                    luaD_throw (L, cc.LUA_ERRERR);  /* error while handing stack error */
                 if (allowyield == 0) L.nny++;
                 if (luaD_precall (L, func, nResults) == 0)  /* is a Lua function? */
                     luaV_execute (L);  /* call it */
@@ -420,7 +422,7 @@ namespace cclua {
             int old_errfunc = L.errfunc;
             L.errfunc = ef;
             int status = luaD_rawrunprotected (L, func, u);
-            if (status != lua530.LUA_OK) {  /* an error occurred? */
+            if (status != cc.LUA_OK) {  /* an error occurred? */
                 int oldtop = restorestack (L, old_top);
                 luaF_close (L, oldtop);  /* close possible pending closures */
                 ldo.seterrorobj (L, status, oldtop);

@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -61,7 +63,7 @@ namespace cclua {
                 msg = luaO_pushfstring (ls.L, "%s:%d: %s", buff, ls.linenumber, msg);
                 if (token != 0)
                     luaO_pushfstring (ls.L, "%s near %s", msg, txtToken (ls, (RESERVED)token));
-                luaD_throw (ls.L, lua530.LUA_ERRSYNTAX);
+                luaD_throw (ls.L, cc.LUA_ERRSYNTAX);
             }
 
 

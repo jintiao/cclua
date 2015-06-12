@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Text;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 
 namespace cclua {
@@ -77,8 +79,8 @@ namespace cclua {
         /*
         ** Extra tags for non-values
         */
-        public const int LUA_TPROTO = lua530.LUA_NUMTAGS;
-        public const int LUA_TDEADKEY = lua530.LUA_NUMTAGS + 1;
+        public const int LUA_TPROTO = cc.LUA_NUMTAGS;
+        public const int LUA_TDEADKEY = cc.LUA_NUMTAGS + 1;
         
         /*
         ** number of all possible tags (including LUA_TNONE but excluding DEADKEY)
@@ -104,17 +106,17 @@ namespace cclua {
         */
 
         /* Variant tags for functions */
-        public const int LUA_TLCL = (lua530.LUA_TFUNCTION | (0 << 4));  /* Lua closure */
-        public const int LUA_TLCF = (lua530.LUA_TFUNCTION | (1 << 4));  /* light C function */
-        public const int LUA_TCCL = (lua530.LUA_TFUNCTION | (2 << 4));  /* C closure */
+        public const int LUA_TLCL = (cc.LUA_TFUNCTION | (0 << 4));  /* Lua closure */
+        public const int LUA_TLCF = (cc.LUA_TFUNCTION | (1 << 4));  /* light C function */
+        public const int LUA_TCCL = (cc.LUA_TFUNCTION | (2 << 4));  /* C closure */
 
 		/* Variant tags for strings */
-		public const int LUA_TSHRSTR = (lua530.LUA_TSTRING | (0 << 4));  /* short strings */
-		public const int LUA_TLNGSTR = (lua530.LUA_TSTRING | (1 << 4));  /* long strings */
+		public const int LUA_TSHRSTR = (cc.LUA_TSTRING | (0 << 4));  /* short strings */
+		public const int LUA_TLNGSTR = (cc.LUA_TSTRING | (1 << 4));  /* long strings */
 
 		/* Variant tags for numbers */
-		public const int LUA_TNUMFLT = (lua530.LUA_TNUMBER | (0 << 4));  /* float numbers */
-		public const int LUA_TNUMINT = (lua530.LUA_TNUMBER | (1 << 4));  /* integer numbers */
+		public const int LUA_TNUMFLT = (cc.LUA_TNUMBER | (0 << 4));  /* float numbers */
+		public const int LUA_TNUMINT = (cc.LUA_TNUMBER | (1 << 4));  /* integer numbers */
 
 
         /* Bit mark for collectable types */
@@ -158,29 +160,29 @@ namespace cclua {
         public static bool checktag (lua_State L, int o, int t) { return checktag (L.stack[o], t); }
         public static bool checktype (TValue o, int t) { return (ttnov (o) == t); }
         public static bool checktype (lua_State L, int o, int t) { return checktype (L.stack[o], t); }
-        public static bool ttisnumber (TValue o) { return checktype (o, lua530.LUA_TNUMBER); }
+        public static bool ttisnumber (TValue o) { return checktype (o, cc.LUA_TNUMBER); }
         public static bool ttisnumber (lua_State L, int o) { return ttisnumber (L.stack[o]); }
         public static bool ttisfloat (TValue o) { return checktag (o, LUA_TNUMFLT); }
         public static bool ttisfloat (lua_State L, int o) { return ttisfloat (L.stack[o]); }
         public static bool ttisinteger (TValue o) { return checktag (o, LUA_TNUMINT); }
         public static bool ttisinteger (lua_State L, int o) { return ttisinteger (L.stack[o]); }
-        public static bool ttisnil (TValue o) { return checktag (o, lua530.LUA_TNIL); }
+        public static bool ttisnil (TValue o) { return checktag (o, cc.LUA_TNIL); }
         public static bool ttisnil (lua_State L, int o) { return ttisnil (L.stack[o]); }
-        public static bool ttisboolean (TValue o) { return checktag (o, lua530.LUA_TBOOLEAN); }
+        public static bool ttisboolean (TValue o) { return checktag (o, cc.LUA_TBOOLEAN); }
         public static bool ttisboolean (lua_State L, int o) { return ttisboolean (L.stack[o]); }
-        public static bool ttislightuserdata (TValue o) { return checktag (o, lua530.LUA_TLIGHTUSERDATA); }
+        public static bool ttislightuserdata (TValue o) { return checktag (o, cc.LUA_TLIGHTUSERDATA); }
         public static bool ttislightuserdata (lua_State L, int o) { return ttislightuserdata (L.stack[o]); }
-        public static bool ttisstring (TValue o) { return checktype (o, lua530.LUA_TSTRING); }
+        public static bool ttisstring (TValue o) { return checktype (o, cc.LUA_TSTRING); }
         public static bool ttisstring (lua_State L, int o) { return ttisstring (L.stack[o]); }
         public static bool ttisshrstring (TValue o) { return checktag (o, ctb (LUA_TSHRSTR)); }
         public static bool ttisshrstring (lua_State L, int o) { return ttisshrstring (L.stack[o]); }
         public static bool ttislngstring (TValue o) { return checktag (o, ctb (LUA_TLNGSTR)); }
         public static bool ttislngstring (lua_State L, int o) { return ttislngstring (L.stack[o]); }
-        public static bool ttistable (TValue o) { return checktag (o, ctb (lua530.LUA_TTABLE)); }
+        public static bool ttistable (TValue o) { return checktag (o, ctb (cc.LUA_TTABLE)); }
         public static bool ttistable (lua_State L, int o) { return ttistable (L.stack[o]); }
-        public static bool ttisfunction (TValue o) { return checktype (o, lua530.LUA_TFUNCTION); }
+        public static bool ttisfunction (TValue o) { return checktype (o, cc.LUA_TFUNCTION); }
         public static bool ttisfunction (lua_State L, int o) { return ttisfunction (L.stack[o]); }
-        public static bool ttisclosure (TValue o) { return ((ttype (o) & 0x1f) == lua530.LUA_TFUNCTION); }
+        public static bool ttisclosure (TValue o) { return ((ttype (o) & 0x1f) == cc.LUA_TFUNCTION); }
         public static bool ttisclosure (lua_State L, int o) { return ttisclosure (L.stack[o]); }
         public static bool ttisCclosure (TValue o) { return checktag (o, ctb (LUA_TCCL)); }
         public static bool ttisCclosure (lua_State L, int o) { return ttisCclosure (L.stack[o]); }
@@ -188,9 +190,9 @@ namespace cclua {
         public static bool ttisLclosure (lua_State L, int o) { return ttisLclosure (L.stack[o]); }
         public static bool ttislcf (TValue o) { return checktag (o, LUA_TLCF); }
         public static bool ttislcf (lua_State L, int o) { return ttislcf (L.stack[o]); }
-        public static bool ttisfulluserdata (TValue o) { return checktag (o, ctb (lua530.LUA_TUSERDATA)); }
+        public static bool ttisfulluserdata (TValue o) { return checktag (o, ctb (cc.LUA_TUSERDATA)); }
         public static bool ttisfulluserdata (lua_State L, int o) { return ttisfulluserdata (L.stack[o]); }
-        public static bool ttisthread (TValue o) { return checktag (o, ctb (lua530.LUA_TTHREAD)); }
+        public static bool ttisthread (TValue o) { return checktag (o, ctb (cc.LUA_TTHREAD)); }
         public static bool ttisthread (lua_State L, int o) { return ttisthread (L.stack[o]); }
         public static bool ttisdeadkey (TValue o) { return checktag (o, LUA_TDEADKEY); }
         public static bool ttisdeadkey (lua_State L, int o) { return ttisdeadkey (L.stack[o]); }
@@ -218,8 +220,8 @@ namespace cclua {
         public static LClosure clLvalue (lua_State L, int o) { return clLvalue (L.stack[o]); }
         public static CClosure clCvalue (TValue o) { return check_exp<CClosure> (ttisCclosure (o), o.value_.o); }
         public static CClosure clCvalue (lua_State L, int o) { return clCvalue (L.stack[o]); }
-        public static lua530.lua_CFunction fvalue (TValue o) { return check_exp<lua530.lua_CFunction> (ttislcf (o), o.value_.o); }
-        public static lua530.lua_CFunction fvalue (lua_State L, int o) { return fvalue (L.stack[o]); }
+        public static cc.lua_CFunction fvalue (TValue o) { return check_exp<cc.lua_CFunction> (ttislcf (o), o.value_.o); }
+        public static cc.lua_CFunction fvalue (lua_State L, int o) { return fvalue (L.stack[o]); }
         public static Table hvalue (TValue o) { return check_exp<Table> (ttistable (o), o.value_.o); }
         public static Table hvalue (lua_State L, int o) { return hvalue (L.stack[o]); }
         public static long bvalue (TValue o) { return check_exp<long> (ttisboolean (o), o.value_.o); }
@@ -261,16 +263,16 @@ namespace cclua {
         public static void setivalue (TValue obj, long x) { obj.value_.o = x; settt_ (obj, LUA_TNUMINT); }
         public static void setivalue (lua_State L, int o, long t) { setivalue (L.stack[o], t); }
 
-        public static void setnilvalue (TValue obj) { obj.value_.o = null; settt_ (obj, lua530.LUA_TNIL); }
+        public static void setnilvalue (TValue obj) { obj.value_.o = null; settt_ (obj, cc.LUA_TNIL); }
         public static void setnilvalue (lua_State L, int o) { setnilvalue (L.stack[o]); }
 
-        public static void setfvalue (TValue obj, lua530.lua_CFunction x) { obj.value_.o = x; settt_ (obj, LUA_TLCF); }
-        public static void setfvalue (lua_State L, int o, lua530.lua_CFunction t) { setfvalue (L.stack[o], t); }
+        public static void setfvalue (TValue obj, cc.lua_CFunction x) { obj.value_.o = x; settt_ (obj, LUA_TLCF); }
+        public static void setfvalue (lua_State L, int o, cc.lua_CFunction t) { setfvalue (L.stack[o], t); }
 
-        public static void setpvalue (TValue obj, object x) { obj.value_.o = x; settt_ (obj, lua530.LUA_TLIGHTUSERDATA); }
+        public static void setpvalue (TValue obj, object x) { obj.value_.o = x; settt_ (obj, cc.LUA_TLIGHTUSERDATA); }
         public static void setpvalue (lua_State L, int o, object t) { setpvalue (L.stack[o], t); }
 
-        public static void setbvalue (TValue obj, int x) { obj.value_.o = x; settt_ (obj, lua530.LUA_TBOOLEAN); }
+        public static void setbvalue (TValue obj, int x) { obj.value_.o = x; settt_ (obj, cc.LUA_TBOOLEAN); }
         public static void setbvalue (lua_State L, int o, int t) { setbvalue (L.stack[o], t); }
 
         public static void setgcovalue (lua_State L, TValue obj, GCObject x) { obj.value_.o = x; settt_ (obj, ctb (x.tt)); }
@@ -283,13 +285,13 @@ namespace cclua {
         public static void setsvalue (lua_State L, int o, TString t) { setsvalue (L, L.stack[o], t); }
 		
 		public static void setuvalue (lua_State L, TValue obj, Udata x) {
-            obj.value_.o = x; settt_ (obj, ctb (lua530.LUA_TUSERDATA)); 
+            obj.value_.o = x; settt_ (obj, ctb (cc.LUA_TUSERDATA)); 
 			checkliveness (G (L), obj);
 		}
         public static void setuvalue (lua_State L, int o, Udata t) { setuvalue (L, L.stack[o], t); }
 		
 		public static void setthvalue (lua_State L, TValue obj, lua_State x) {
-            obj.value_.o = x; settt_ (obj, ctb (lua530.LUA_TTHREAD));
+            obj.value_.o = x; settt_ (obj, ctb (cc.LUA_TTHREAD));
 			checkliveness (G (L), obj);
 		}
         public static void setthvalue (lua_State L, int o, lua_State t) { setthvalue (L, L.stack[o], t); }
@@ -307,7 +309,7 @@ namespace cclua {
         public static void setclCvalue (lua_State L, int o, CClosure t) { setclCvalue (L, L.stack[o], t); }
 		
 		public static void sethvalue (lua_State L, TValue obj, Table x) { 
-			obj.value_.o = x; settt_ (obj, ctb (lua530.LUA_TTABLE)); 
+			obj.value_.o = x; settt_ (obj, ctb (cc.LUA_TTABLE)); 
 			checkliveness (G (L), obj);
 		}
         public static void sethvalue (lua_State L, int o, Table t) { sethvalue (L, L.stack[o], t); }
@@ -382,7 +384,7 @@ namespace cclua {
 
 			public TValue () {
                 value_ = luaM_newobject<Value> (null);
-                tt_ = lua530.LUA_TNIL;
+                tt_ = cc.LUA_TNIL;
             }
         }
 
@@ -536,7 +538,7 @@ namespace cclua {
 		}
 
 		public class CClosure : ClosureHeader {
-            public lua530.lua_CFunction f;
+            public cc.lua_CFunction f;
             public TValue[] upvalue;  /* list of upvalues */
 		}
 
@@ -662,12 +664,12 @@ namespace cclua {
 
 
         public static void luaO_arith (lua_State L, int op, TValue p1, TValue p2, TValue res) {
-            if (op == lua530.LUA_OPBAND ||
-                    op == lua530.LUA_OPBOR ||
-                    op == lua530.LUA_OPBXOR ||
-                    op == lua530.LUA_OPSHL ||
-                    op == lua530.LUA_OPSHR ||
-                    op == lua530.LUA_OPBNOT) {  /* operate only on integers */
+            if (op == cc.LUA_OPBAND ||
+                    op == cc.LUA_OPBOR ||
+                    op == cc.LUA_OPBXOR ||
+                    op == cc.LUA_OPSHL ||
+                    op == cc.LUA_OPSHR ||
+                    op == cc.LUA_OPBNOT) {  /* operate only on integers */
                 long i1 = 0;
                 long i2 = 0;
                 if (tointeger (p1, ref i1) && tointeger (p2, ref i2)) {

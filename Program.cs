@@ -10,7 +10,7 @@ namespace lua530 {
     class Program {
         static void Main (string[] args) {
             var L = cc.luaL_newstate ();
-			//cc.luaL_openlibs (L);
+			cc.luaL_openlibs (L);
 			//cc.lua_newtable(L);
             cc.lua_pushinteger (L, 2);
 			//cc.lua_pushnumber(L, 7);

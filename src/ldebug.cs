@@ -1,5 +1,7 @@
 ﻿using System;
 
+using cc = cclua.lua530;
+
 using lua_State = cclua.lua530.lua_State;
 using lua_Debug = cclua.lua530.lua_Debug;
 using CallInfo = cclua.imp.CallInfo;
@@ -456,7 +458,7 @@ namespace cclua {
                 L.top++;  /* assume EXTRA_STACK */
                 luaD_call (L, L.top - 2, 1, 0);  /* call it */
             }
-            luaD_throw (L, lua530.LUA_ERRRUN);
+            luaD_throw (L, cc.LUA_ERRRUN);
         }
 
 
@@ -468,7 +470,7 @@ namespace cclua {
         public static void luaG_traceexec (lua_State L) {
             CallInfo ci = L.ci;
             byte mask = L.hookmask;
-            bool counthook = ((mask & lua530.LUA_MASKCOUNT) != 0 && L.hookcount == 0);
+            bool counthook = ((mask & cc.LUA_MASKCOUNT) != 0 && L.hookcount == 0);
             if (counthook)
                 resethookcount (L);  /* reset count */
             if ((ci.callstatus & CIST_HOOKYIELD) != 0) {  /* called hook last time? */
@@ -476,24 +478,24 @@ namespace cclua {
                 return;  /* do not call hook again (VM yielded, so it did not move) */
             }
             if (counthook)
-                luaD_hook (L, lua530.LUA_HOOKCOUNT, -1);  /* call count hook */
-            if ((mask & lua530.LUA_MASKLINE) != 0) {
+                luaD_hook (L, cc.LUA_HOOKCOUNT, -1);  /* call count hook */
+            if ((mask & cc.LUA_MASKLINE) != 0) {
                 Proto p = ci_func (L, ci).p;
                 int npc = pcRel (ci.u.l.savedpc, p);
                 int newline = getfuncline (p, npc);
                 if (npc == 0 ||  /* call linehook when enter a new function, */
                     ci.u.l.savedpc <= L.oldpc ||  /* when jump back (loop), or when */
                     newline != getfuncline (p, pcRel (L.oldpc, p)))  /* enter a new line */
-                    luaD_hook (L, lua530.LUA_HOOKLINE, newline);  /* call line hook */
+                    luaD_hook (L, cc.LUA_HOOKLINE, newline);  /* call line hook */
             }
             L.oldpc = ci.u.l.savedpc;
-            if (L.status == lua530.LUA_YIELD) {  /* did hook yield? */
+            if (L.status == cc.LUA_YIELD) {  /* did hook yield? */
                 if (counthook)
                     L.hookcount = 1;  /* undo decrement to zero */
                 ci.u.l.savedpc--;  /* undo increment (resume will increment it again) */
                 ci.callstatus |= CIST_HOOKYIELD;  /* mark that it yielded */
                 ci.func = L.top - 1;  /* protect stack below results */
-                luaD_throw (L, lua530.LUA_YIELD);
+                luaD_throw (L, cc.LUA_YIELD);
             }
         }
     }
