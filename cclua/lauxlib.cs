@@ -264,28 +264,6 @@ namespace cclua {
 
     public static partial class lua530 {
 
-        /*
-        ** {==================================================================
-        ** "Abstraction Layer" for basic report of messages and errors
-        ** ===================================================================
-        */
-
-
-        /* print a string */
-        public static void lua_writestring (string s) { /* TODO */
-            Console.Write (s);
-        }
-
-        /* print a newline and flush the output */
-        public static void lua_writeline () { /* TODO */
-            Console.WriteLine ();
-        }
-
-        /* print an error message */
-        public static void lua_writestringerror (string fmt, params object[] args) {  /* TODO */
-            Console.Write (fmt, args);
-        }
-
 		/* extra error code for 'luaL_load' */
 		public const int LUA_ERRFILE = LUA_ERRERR + 1;
 
@@ -730,7 +708,7 @@ namespace cclua {
             if (isnum == 0)
                 luaL_error (L, "object length is not an integer");
             lua_pop (L, 1);  /* remove object */
-            return 1;
+            return l;
         }
 
 
