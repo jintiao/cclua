@@ -358,7 +358,6 @@ namespace cclua {
                 if ((L.hookmask & cc.LUA_MASKCALL) != 0)
                     ldo.callhook (L, ci);
                 return 0;
-
             }
             else {  /* not a function */
                 luaD_checkstack (L, 1);  /* ensure space for metamethod */
@@ -406,12 +405,12 @@ namespace cclua {
                     luaG_runerror (L, "C stack overflow");
                 else if (L.nCcalls >= (LUAI_MAXCCALLS + (LUAI_MAXCCALLS >> 3)))
                     luaD_throw (L, cc.LUA_ERRERR);  /* error while handing stack error */
-                if (allowyield == 0) L.nny++;
-                if (luaD_precall (L, func, nResults) == 0)  /* is a Lua function? */
-                    luaV_execute (L);  /* call it */
-                if (allowyield == 0) L.nny--;
-                L.nCcalls--;
             }
+            if (allowyield == 0) L.nny++;
+            if (luaD_precall (L, func, nResults) == 0)  /* is a Lua function? */
+                luaV_execute (L);  /* call it */
+            if (allowyield == 0) L.nny--;
+            L.nCcalls--;
         }
 
 

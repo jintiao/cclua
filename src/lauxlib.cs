@@ -32,12 +32,6 @@ namespace cclua {
         public static void fclose (FileStream f) { }
 
 
-
-        public static void lua_writestring (string s, int l) { /* TODO */ }
-        public static void lua_writeline () { /* TODO */ }
-        public static void lua_writestringerror (string fmt, params object[] args) {  /* TODO */ }
-
-
 		/*
 		** {======================================================
 		** Traceback
@@ -263,12 +257,34 @@ namespace cclua {
 
 		
 		public static int panic (lua_State L) {
-            imp.lua_writestringerror ("PANIC: unprotected error in call to Lua API (%s)\n", cc.lua_tostring (L, -1));
+            cc.lua_writestringerror ("PANIC: unprotected error in call to Lua API ({0})\n", cc.lua_tostring (L, -1));
 			return 0; /* return to Lua to abort */
 		}
 	}
 
     public static partial class lua530 {
+
+        /*
+        ** {==================================================================
+        ** "Abstraction Layer" for basic report of messages and errors
+        ** ===================================================================
+        */
+
+
+        /* print a string */
+        public static void lua_writestring (string s) { /* TODO */
+            Console.Write (s);
+        }
+
+        /* print a newline and flush the output */
+        public static void lua_writeline () { /* TODO */
+            Console.WriteLine ();
+        }
+
+        /* print an error message */
+        public static void lua_writestringerror (string fmt, params object[] args) {  /* TODO */
+            Console.Write (fmt, args);
+        }
 
 		/* extra error code for 'luaL_load' */
 		public const int LUA_ERRFILE = LUA_ERRERR + 1;

@@ -10,7 +10,9 @@ namespace cclua {
 		public static string LUA_VERSION_RELEASE = "0";
 
 		public static string LUA_VERSION = "Lua " + LUA_VERSION_MAJOR + "." + LUA_VERSION_MINOR;
-		public static string LUA_RELEASE = LUA_VERSION + "." + LUA_VERSION_RELEASE;
+        public static string LUA_RELEASE = LUA_VERSION + "." + LUA_VERSION_RELEASE;
+        public static string LUA_COPYRIGHT = LUA_RELEASE + "  Copyright (C) 1994-2015 Lua.org, PUC-Rio. Port by jintiao";
+        public static string LUA_AUTHORS = "R. Ierusalimschy, L. H. de Figueiredo, W. Celes, jintiao";
 
 
         /* mark for precompiled code ('<esc>Lua') */

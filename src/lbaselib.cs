@@ -159,11 +159,11 @@ namespace cclua {
                 string s = cc.lua_tolstring (L, -1, ref l);
                 if (s == null)
                     return cc.luaL_error (L, "'tostring' must return a string to 'print'");
-                if (i > 1) lua_writestring ("\t", 1);
-                lua_writestring (s, l);
+                if (i > 1) cc.lua_writestring ("\t");
+                cc.lua_writestring (s);
                 cc.lua_pop (L, 1);
             }
-            lua_writeline ();
+            cc.lua_writeline ();
             return 0;
         }
 
