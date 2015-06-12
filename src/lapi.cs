@@ -532,23 +532,39 @@ namespace cclua {
                 imp.setsvalue2s (L, L.top, ts);
                 imp.api_incr_top (L);
                 imp.lua_unlock (L);
-                return imp.byte2str (imp.getstr (ts));
+                return imp.getsstr (ts);
             }
         }
 
 
 		public static string lua_pushstring (lua_State L, string s) {
-			return null;
+            if (s == null) {
+                lua_pushnil (L);
+                return null;
+            }
+            else {
+                imp.lua_lock (L);
+                imp.luaC_checkGC (L);
+                TString ts = imp.luaS_new (L, s);
+                imp.setsvalue2s (L, L.top, ts);
+                imp.api_incr_top (L);
+                imp.lua_unlock (L);
+                return imp.getsstr (ts);
+            }
 		}
 		
 		
 		public static string lua_pushvfstring (lua_State L, string fmt, params object[] args) {
-			return null;
+            return lua_pushfstring (L, fmt, args);
 		}
-		
-		
-		public static string lua_pushfstring (lua_State L, string s, params object[] args) {
-			return null;
+
+
+        public static string lua_pushfstring (lua_State L, string fmt, params object[] args) {
+            imp.lua_lock (L);
+            imp.luaC_checkGC (L);
+            string ret = imp.luaO_pushfstring (L, fmt, args);
+            imp.lua_unlock (L);
+            return ret;
 		}
 
 

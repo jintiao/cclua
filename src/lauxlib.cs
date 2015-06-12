@@ -774,7 +774,7 @@ namespace cclua {
         */
         public static void luaL_setfuncs (lua_State L, luaL_Reg[] l, int nup) {
             luaL_checkstack (L, nup, "too many upvalues");
-            for (int i = 0; i < l.Length; i++) {  /* fill the table with given functions */
+            for (int i = 0; l[i].name != null; i++) {  /* fill the table with given functions */
                 for (int k = 0; k < nup; k++)  /* copy upvalues to the top */
                     lua_pushvalue (L, -nup);
                 lua_pushcclosure (L, l[i].func, nup);  /* closure with those upvalues */

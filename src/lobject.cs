@@ -747,9 +747,16 @@ namespace cclua {
             luaO_tostring (L, L.stack[obj]);
         }
 
+        /* this function handles only '%d', '%c', '%f', '%p', and '%s' 
+            conventional formats, plus Lua-specific '%I' and '%U' */
+        public static string luaO_pushvfstring (lua_State L, string fmt, params object[] args) {
+            // TODO
+            return fmt;
+        }
+
 
         public static string luaO_pushfstring (lua_State L, string fmt, params object[] args) {
-            return fmt;
+            return luaO_pushvfstring (L, fmt, args);
         }
 
 
