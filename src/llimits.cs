@@ -69,8 +69,6 @@ namespace cclua {
 
 		public static void lua_longassert (bool c) { if (c == false) lua_assert (0); }
 
-        public static void lua_writestringerror (string fmt, params object[] args) { }
-
 		public static void luai_userstateopen (lua_State L) { }
 
         public static void luai_userstateclose (lua_State L) { }

@@ -31,6 +31,13 @@ namespace cclua {
         public static int ferror (FileStream f) { return 0; }
         public static void fclose (FileStream f) { }
 
+
+
+        public static void lua_writestring (string s, int l) { /* TODO */ }
+        public static void lua_writeline () { /* TODO */ }
+        public static void lua_writestringerror (string fmt, params object[] args) {  /* TODO */ }
+
+
 		/*
 		** {======================================================
 		** Traceback
@@ -286,7 +293,7 @@ namespace cclua {
 		public const int LUA_REFNIL = -1;
 
 
-		public static void luaL_loadfile (lua_State L, string f) { luaL_loadfilex (L, f, null); }
+		public static int luaL_loadfile (lua_State L, string f) { return luaL_loadfilex (L, f, null); }
 
 
 		/*
