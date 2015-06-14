@@ -11,20 +11,20 @@ namespace cclua {
 		
 		public static class lco {
 			
-			
+
 		}
-		
+
 		
 		public static luaL_Reg[] co_funcs = {
-			
+
 			new luaL_Reg (null, null),
 		};
 	}
 	
 	public static partial class mod {
 		
-		public static int luaopen_io (lua_State L) {
-			
+		public static int luaopen_table (lua_State L) {
+
 			return 1;
 		}
 	}

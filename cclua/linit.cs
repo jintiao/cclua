@@ -29,6 +29,15 @@ namespace cclua {
 		*/
 		public static luaL_Reg[] loadedlibs = {
 			new luaL_Reg ("_G", mod.luaopen_base),
+			new luaL_Reg (LUA_LOADLIBNAME, mod.luaopen_package),
+			new luaL_Reg (LUA_COLIBNAME, mod.luaopen_coroutine),
+			new luaL_Reg (LUA_TABLIBNAME, mod.luaopen_table),
+			new luaL_Reg (LUA_IOLIBNAME, mod.luaopen_io),
+			new luaL_Reg (LUA_OSLIBNAME, mod.luaopen_os),
+			new luaL_Reg (LUA_STRLIBNAME, mod.luaopen_string),
+			new luaL_Reg (LUA_MATHLIBNAME, mod.luaopen_math),
+			new luaL_Reg (LUA_UTF8LIBNAME, mod.luaopen_utf8),
+			new luaL_Reg (LUA_DBLIBNAME, mod.luaopen_debug),
 			new luaL_Reg (null, null),
 		};
 	}
