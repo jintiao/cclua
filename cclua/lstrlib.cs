@@ -9,13 +9,13 @@ namespace cclua {
 	
 	public static partial class imp {
 		
-		public static class lco {
+		public static class lstr {
 			
 			
 		}
-		
-		
-		public static luaL_Reg[] co_funcs = {
+
+
+        public static luaL_Reg[] str_funcs = {
 			
 			new luaL_Reg (null, null),
 		};

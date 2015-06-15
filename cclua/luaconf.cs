@@ -55,12 +55,6 @@ namespace cclua {
         public const long LUA_MININTEGER = Int64.MinValue;
 
 
-        public static string lua_integer2str (long i) { return i.ToString (); }
-
-
-        public static string lua_number2str (double i) { return i.ToString (); }
-
-
         /* these are quite standard operations */
         public static double luai_numadd (cc.lua_State L, double a, double b) { return (a + b); }
         public static double luai_numsub (cc.lua_State L, double a, double b) { return (a - b); }
@@ -71,12 +65,16 @@ namespace cclua {
         public static bool luai_numlt (double a, double b) { return (a < b); }
         public static bool luai_numle (double a, double b) { return (a <= b); }
         public static bool luai_numisnan (double a) { return luai_numeq (a, a); }
+        
 
         public static double l_floor (double x) { return Math.Floor (x); }
     }
 
 
     public static partial class lua530 {
+
+
+        public static double lua_str2number (string s) { double res = 0; Double.TryParse (s, out res); return res; }
 
         /*
         @@ lua_numbertointeger converts a float number to an integer, or
@@ -93,5 +91,11 @@ namespace cclua {
             }
             return false;
         }
+
+
+        public static string lua_integer2str (long i) { return i.ToString (); }
+
+
+        public static string lua_number2str (double i) { return i.ToString (); }
     }
 }

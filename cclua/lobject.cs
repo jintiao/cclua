@@ -731,11 +731,11 @@ namespace cclua {
             lua_assert (ttisnumber (obj));
 			string str;
             if (ttisinteger (obj))
-                str = lua_integer2str (ivalue (obj));
+                str = cc.lua_integer2str (ivalue (obj));
 			else {
                 double n = fltvalue (obj);
                 double f = l_floor (n);
-                str = lua_number2str (n);
+                str = cc.lua_number2str (n);
 				if (n == f) {  /* looks like an int? */
                     str = str + ".0";  /* adds '.0' to result */
 				}
