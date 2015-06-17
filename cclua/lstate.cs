@@ -106,7 +106,7 @@ namespace cclua {
         */
         public class CallInfo {
             public class cil {
-                public int fbase;  /* base for this function */
+                public int nbase;  /* base for this function */
                 public int savedpc;
             }
             public class cic {

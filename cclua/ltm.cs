@@ -117,6 +117,7 @@ namespace cclua {
             }
             return ((mt == null) ? luaH_getstr (mt, G (L).tmname[(byte)ev]) : luaO_nilobject);
         }
+        public static TValue luaT_gettmbyobj (lua_State L, int o, TMS ev) { return luaT_gettmbyobj (L, L.stack[o], ev); }
 
 
         public static void luaT_callTM (lua_State L, TValue f, TValue p1, TValue p2, int p3, int hasres) {

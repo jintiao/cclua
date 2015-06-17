@@ -103,6 +103,7 @@ namespace cclua {
             }
             public static bool tostring (lua_State L, int o) { return tostring (L, L.stack[o]); }
 
+            
         }
 
 
@@ -491,23 +492,98 @@ namespace cclua {
         ** finish execution of an opcode interrupted by an yield
         */
         public static void luaV_finishOp (lua_State L) {
+            CallInfo ci = L.ci;
+            int nbase = ci.u.l.nbase;
+            Proto p = ci_func (L, ci).p;
+            uint inst = p.code[ci.u.l.savedpc - 1];  /* interrupted instruction */
+            OpCode op = GET_OPCODE (inst);
+            switch (op) {  /* finish its execution */
+                case OpCode.OP_ADD: goto case OpCode.OP_SELF;
+                case OpCode.OP_SUB: goto case OpCode.OP_SELF;
+                case OpCode.OP_MUL: goto case OpCode.OP_SELF;
+                case OpCode.OP_DIV: goto case OpCode.OP_SELF;
+                case OpCode.OP_IDIV: goto case OpCode.OP_SELF;
+                case OpCode.OP_BAND: goto case OpCode.OP_SELF;
+                case OpCode.OP_BOR: goto case OpCode.OP_SELF;
+                case OpCode.OP_BXOR: goto case OpCode.OP_SELF;
+                case OpCode.OP_SHL: goto case OpCode.OP_SELF;
+                case OpCode.OP_SHR: goto case OpCode.OP_SELF;
+                case OpCode.OP_MOD: goto case OpCode.OP_SELF;
+                case OpCode.OP_POW: goto case OpCode.OP_SELF;
+                case OpCode.OP_UNM: goto case OpCode.OP_SELF;
+                case OpCode.OP_BNOT: goto case OpCode.OP_SELF;
+                case OpCode.OP_LEN: goto case OpCode.OP_SELF;
+                case OpCode.OP_GETTABUP: goto case OpCode.OP_SELF;
+                case OpCode.OP_GETTABLE: goto case OpCode.OP_SELF;
+                case OpCode.OP_SELF: {
+                    setobjs2s (L, nbase + GETARG_A (inst), --L.top);
+                    break;
+                }
+                case OpCode.OP_LE: goto case OpCode.OP_EQ;
+                case OpCode.OP_LT: goto case OpCode.OP_EQ;
+                case OpCode.OP_EQ: {
+                    bool res = !l_isfalse (L, L.top - 1);
+                    L.top--;
+                    /* metamethod should not be called when operand is K */
+                    lua_assert (ISK (GETARG_B (inst)) == false);
+                    if (op == OpCode.OP_LE && ttisnil (luaT_gettmbyobj (L, nbase + GETARG_B (inst), TMS.TM_LE)))  /* "<=" using "<" instead? */
+                        res = !res;  /* invert result */
+                    lua_assert (GET_OPCODE (p.code[ci.u.l.savedpc]) == OpCode.OP_JMP);
+                    bool a = (GETARG_A (inst) != 0 ? true : false);
+                    if (res != a)  /* condition failed? */
+                        ci.u.l.savedpc++;  /* skip jump instruction */
+                    break;
+                }
+                case OpCode.OP_CONCAT: {
+                    int top = L.top - 1;  /* top when 'luaT_trybinTM' was called */
+                    int b = GETARG_B (inst);  /* first element to concatenate */
+                    int total = top - 1 - (nbase + b);  /* yet to concatenate */
+                    setobj2s (L, top - 2, top);  /* put TM result in proper position */
+                    if (total > 1) {  /* are there elements to concat? */
+                        L.top = top - 1;  /* top is one after last element (at top-2) */
+                        luaV_concat (L, total);  /* concat them (may yield again) */
+                    }
+                    /* move final result to final position */
+                    setobj2s (L, ci.u.l.nbase + GETARG_A (inst), L.top - 1);
+                    L.top = ci.top;  /* restore top */
+                    break;
+                }
+                case OpCode.OP_TFORCALL: {
+                    lua_assert (GET_OPCODE (p.code[ci.u.l.savedpc]) == OpCode.OP_TFORLOOP);
+                    L.top = ci.top;  /* correct top */
+                    break;
+                }
+                case OpCode.OP_CALL: {
+                    if (GETARG_C (inst) - 1 >= 0)  /* nresults >= 0? */
+                        L.top = ci.top;  /* adjust results */
+                    break;
+                }
+                case OpCode.OP_TAILCALL: goto case OpCode.OP_SETTABLE;
+                case OpCode.OP_SETTABUP: goto case OpCode.OP_SETTABLE;
+                case OpCode.OP_SETTABLE: break;
+                default: lua_assert (false); break;
+            }
         }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
 
 
         public static void luaV_execute (lua_State L) {
+            CallInfo ci = L.ci;
+            LClosure cl = null;
+            TValue[] k = null;
+            int nbase = 0;
+//        newframe:
+            lua_assert (ci == L.ci);
+            cl = clLvalue (L, ci.func);
+            k = cl.p.k;
+            nbase = ci.u.l.nbase;
+            Proto p = ci_func (L, ci).p;
+            for (; ; ) {
+                uint i = p.code[ci.u.l.savedpc++];
+                if ((L.hookmask & (cc.LUA_MASKLINE | cc.LUA_MASKCOUNT)) != 0 && (--L.hookcount == 0 || (L.hookmask & cc.LUA_MASKLINE) != 0)) {
+                    luaG_traceexec (L);
+                    nbase = ci.u.l.nbase;
+                }
+            }
         }
         
         

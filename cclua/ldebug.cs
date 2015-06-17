@@ -47,7 +47,7 @@ namespace cclua {
 
 		public static string findvararg (lua_State L, CallInfo ci, int n, ref int pos) {
 			int nparam = clLvalue (L, ci.func).p.numparams;
-			if (n >= ci.u.l.fbase - ci.func - nparam)
+			if (n >= ci.u.l.nbase - ci.func - nparam)
 				return null;
 			else {
 				pos = ci.func + nparam + n;
@@ -63,7 +63,7 @@ namespace cclua {
 				if (n < 0)  /* access to vararg values? */
 					return findvararg (L, ci, -n, ref pos);
 				else {
-					sbase = ci.u.l.fbase;
+					sbase = ci.u.l.nbase;
 					name = luaF_getlocalname (ci_func (L, ci).p, n, currentpc (L, ci));
 				}
 			}

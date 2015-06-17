@@ -12,10 +12,10 @@ namespace cclua {
 
     class Program {
 
-        static string LUA_PROMPT = "> ";
-        static string LUA_PROMPT2 = ">> ";
+        //static string LUA_PROMPT = "> ";
+        //static string LUA_PROMPT2 = ">> ";
         static string LUA_PROGNAME = "cclua";
-        static int LUA_MAXINPUT = 512;
+        //static int LUA_MAXINPUT = 512;
         static string LUA_INIT_VAR = "LUA_INIT";
         static string LUA_INITVARVERSION = LUA_INIT_VAR + "_" + cc.LUA_VERSION_MAJOR + "_" + cc.LUA_VERSION_MINOR;
 

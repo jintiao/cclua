@@ -375,23 +375,23 @@ namespace cclua {
             else if (tt == LUA_TLCL) {  /* Lua function: prepare its call */
                 Proto p = clLvalue (L.stack[func]).p;
                 n = (L.top - func) - 1;  /* number of real arguments */
-                int fbase;
+                int nbase;
                 luaD_checkstack (L, p.maxstacksize);
                 for (; nresult < p.numparams; n++)
                     setnilvalue (L.stack[L.top++]);  /* complete missing arguments */
                 if (p.is_vararg == 0) {
                     func = restorestack (L, funcr);
-                    fbase = func + 1;
+                    nbase = func + 1;
                 }
                 else {
-                    fbase = ldo.adjust_varargs (L, p, n);
+                    nbase = ldo.adjust_varargs (L, p, n);
                     func = restorestack (L, funcr);  /* previous call can change stack */
                 }
                 ci = ldo.next_ci (L);  /* now 'enter' new function */
                 ci.nresults = (short)nresult;
                 ci.func = func;
-                ci.u.l.fbase = fbase;
-                ci.top = fbase + p.maxstacksize;
+                ci.u.l.nbase = nbase;
+                ci.top = nbase + p.maxstacksize;
                 lua_assert (ci.top <= L.stack_last);
                 ci.u.l.savedpc = 0;  /* starting point */
                 ci.callstatus = CIST_LUA;
