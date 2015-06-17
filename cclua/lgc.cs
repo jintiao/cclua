@@ -76,10 +76,10 @@ namespace cclua {
 
 			public static bool valiswhite (TValue x) { return (iscollectable (x) && iswhite (gcvalue (x))); }
 
-			public static void checkdeadkey (Node n) { lua_assert (ttisdeadkey (n.i_key.tvk) == false || ttisnil (n.i_val)); }
+            public static void checkdeadkey (Node n) { cc.lua_assert (ttisdeadkey (n.i_key.tvk) == false || ttisnil (n.i_val)); }
 
 
-			public static void checkconsistency (TValue obj) { lua_longassert (iscollectable (obj) == false || righttt (obj)); }
+            public static void checkconsistency (TValue obj) { cc.lua_longassert (iscollectable (obj) == false || righttt (obj)); }
 
 
 			public static void markvalue (global_State g, TValue o) {

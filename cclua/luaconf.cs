@@ -20,22 +20,6 @@ namespace cclua {
         public const int LUAI_FIRSTPSEUDOIDX = -LUAI_MAXSTACK - 1000;
 
 
-        /*
-        @@ LUA_EXTRASPACE defines the size of a raw memory area associated with
-        ** a Lua state with very fast access.
-        ** CHANGE it if you need a different size.
-        */
-        public const int LUA_EXTRASPACE = sizeof (long);
-
-
-        /*
-        @@ LUA_IDSIZE gives the maximum size for the description of the source
-        @@ of a function in debug information.
-        ** CHANGE it if you want a different size.
-        */
-        public const int LUA_IDSIZE = 60;
-
-
 		/*
 		@@ LUAI_MAXSHORTLEN is the maximum length for short strings, that is,
 		** strings that are internalized. (Cannot be smaller than reserved words
@@ -49,10 +33,6 @@ namespace cclua {
 		** CHANGE it if it uses too much C-stack space.
 		*/
 		public const int LUAL_BUFFERSIZE = (0x80 * sizeof (long) * sizeof (double));
-
-
-        public const long LUA_MAXINTEGER = Int64.MaxValue;
-        public const long LUA_MININTEGER = Int64.MinValue;
 
 
         /* these are quite standard operations */
@@ -74,6 +54,26 @@ namespace cclua {
     public static partial class lua530 {
 
 
+        /*
+        @@ LUA_EXTRASPACE defines the size of a raw memory area associated with
+        ** a Lua state with very fast access.
+        ** CHANGE it if you need a different size.
+        */
+        public const int LUA_EXTRASPACE = sizeof (long);
+
+
+        /*
+        @@ LUA_IDSIZE gives the maximum size for the description of the source
+        @@ of a function in debug information.
+        ** CHANGE it if you want a different size.
+        */
+        public const int LUA_IDSIZE = 60;
+
+
+        public const long LUA_MAXINTEGER = Int64.MaxValue;
+        public const long LUA_MININTEGER = Int64.MinValue;
+
+
         public static double lua_str2number (string s) { double res = 0; Double.TryParse (s, out res); return res; }
 
         /*
@@ -85,7 +85,7 @@ namespace cclua {
         ** and therefore its conversion to float may have an ill-defined value.)
         */
         public static bool lua_numbertointeger (double n, ref long p) {
-            if (n >= (double)imp.LUA_MININTEGER && n < (-((double)imp.LUA_MININTEGER))) {
+            if (n >= (double)LUA_MININTEGER && n < (-((double)LUA_MININTEGER))) {
                 p = (long)n;
                 return true;
             }

@@ -59,7 +59,7 @@ namespace cclua {
 
             public static void lexerror (LexState ls, string msg, int token) {
                 string buff = null;
-                luaO_chunkid (ref buff, getsstr (ls.source), LUA_IDSIZE);
+                luaO_chunkid (ref buff, getsstr (ls.source), cc.LUA_IDSIZE);
                 msg = luaO_pushfstring (ls.L, "%s:%d: %s", buff, ls.linenumber, msg);
                 if (token != 0)
                     luaO_pushfstring (ls.L, "%s near %s", msg, txtToken (ls, (RESERVED)token));
@@ -574,7 +574,7 @@ namespace cclua {
 
         public static string luaX_token2str (LexState ls, int token) {
             if (token < FIRST_RESERVED) {  /* single-byte symbols? */
-                lua_assert (token = (byte)token);
+                cc.lua_assert (token = (byte)token);
                 return luaO_pushfstring (ls.L, "'%c'", token);
             }
             else {
@@ -627,7 +627,7 @@ namespace cclua {
             ls.lastline = 1;
             ls.source = source;
             ls.envn = luaS_new (L, LUA_ENV);  /* get env name */
-            luaZ_resizebuffer (ls.L, ls.buff, LUA_MINBUFFER);  /* initialize buffer */
+            luaZ_resizebuffer (ls.L, ls.buff, cc.LUA_MINBUFFER);  /* initialize buffer */
         }
 
 

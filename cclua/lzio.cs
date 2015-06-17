@@ -52,10 +52,10 @@ namespace cclua {
 
         public static int luaZ_fill (Zio z) {
             lua_State L = z.L;
-            lua_unlock (L);
+            cc.lua_unlock (L);
             int size = 0;
             byte[] buff = z.reader (L, z.data, ref size);
-            lua_lock (L);
+            cc.lua_lock (L);
             if (buff == null || size == 0)
                 return EOZ;
             z.n = size - 1;  /* discount char being returned */
@@ -75,7 +75,7 @@ namespace cclua {
 
 		public static byte[] luaZ_openspace (lua_State L, MBuffer buff, int n) {
 			if (n > buff.buffsize) {
-				if (n < LUA_MINBUFFER) n = LUA_MINBUFFER;
+                if (n < cc.LUA_MINBUFFER) n = cc.LUA_MINBUFFER;
 				luaZ_resizebuffer (L, buff, n);
 			}
 			return buff.buffer;

@@ -103,12 +103,12 @@ namespace cclua {
             }
             public static bool tostring (lua_State L, int o) { return tostring (L, L.stack[o]); }
 
+        }
 
-            public static void memcpy (byte[] dest, int offset, byte[] src, int len) {
-                for (int i = 0; i < len; i++)
-                    dest[offset + i] = src[i];
-            }
 
+        public static void memcpy (byte[] dest, int offset, byte[] src, int len) {
+            for (int i = 0; i < len; i++)
+                dest[offset + i] = src[i];
         }
 
 
@@ -392,7 +392,7 @@ namespace cclua {
 					n = i;
 					do {  /* copy all strings to buffer */
                         int l = tsvalue (L, top - i).len;
-                        lvm.memcpy (buffer, tl, svalue (L, top - i), l);
+                        memcpy (buffer, tl, svalue (L, top - i), l);
 						tl += l;
 					} while (--i > 0);
 					setsvalue2s (L, top - n, luaS_newlstr (L, buffer, tl));  /* create result */
@@ -485,6 +485,13 @@ namespace cclua {
 				else return (x << y);
 			}
 		}
+
+
+        /*
+        ** finish execution of an opcode interrupted by an yield
+        */
+        public static void luaV_finishOp (lua_State L) {
+        }
         
         
         

@@ -246,7 +246,7 @@ namespace cclua {
         public static bool righttt (lua_State L, int o) { return righttt (L.stack[o]); }
 
 		public static void checkliveness (global_State g, TValue obj) {
-			lua_longassert ( (iscollectable (obj) == false) ||
+			cc.lua_longassert ( (iscollectable (obj) == false) ||
 			                (righttt (obj) && (isdead (g, gcvalue (obj)) == false)));
 		}
         public static void checkliveness (global_State g, lua_State L, int o) { checkliveness (g, L.stack[o]); }

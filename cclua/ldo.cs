@@ -46,26 +46,6 @@ namespace cclua {
 			public static void abort () { /* TODO */  }
 
 
-
-			public static void seterrorobj (lua_State L, int errcode, int oldtop) {
-				switch (errcode) {
-				case cc.LUA_ERRMEM: {  /* memory error? */
-					setsvalue2s (L, L.stack[oldtop], G (L).memerrmsg);  /* reuse preregistered msg. */
-					break;					         
-				}
-				case cc.LUA_ERRERR: {
-					setsvalue2s (L, L.stack[oldtop], luaS_newliteral (L, "error in error handling"));
-					break;
-				}
-				default: {
-					setobjs2s(L, L.stack[oldtop], L.stack[L.top - 1]);  /* error message on current top */
-					break;
-				}
-				}
-				L.top = oldtop + 1;
-			}
-
-
             public static void correctstack (lua_State L, TValue[] oldstack) {
 				for (UpVal up = L.openupval; up != null; up = up.u.open.next)
 					up.v = L.stack[up.level];
@@ -126,6 +106,46 @@ namespace cclua {
 
 
             /*
+            ** Completes the execution of an interrupted C function, calling its
+            ** continuation function.
+            */
+            public static void finishCcall (lua_State L, int status) {
+                CallInfo ci = L.ci;
+                /* must have a continuation and must be able to call it */
+                lua_assert (ci.u.c.k != null && L.nny == 0);
+                /* error status can only happen in a protected call */
+                lua_assert (((ci.callstatus & CIST_YPCALL) != 0) || status == cc.LUA_YIELD);
+                if ((ci.callstatus & CIST_YPCALL) != 0) {  /* was inside a pcall? */
+                    ci.callstatus = (byte)(ci.callstatus & (~CIST_YPCALL));  /* finish 'lua_pcall' */
+                    L.errfunc = ci.u.c.old_errfunc;
+                }
+                /* finish 'lua_callk'/'lua_pcall'; CIST_YPCALL and 'errfunc' already
+                    handled */
+                adjustresults (L, ci.nresults);
+                /* call continuation function */
+                cc.lua_unlock (L);
+                int n = ci.u.c.k (L, status, ci.u.c.ctx);
+                cc.lua_lock (L);
+                api_checknelems (L, n);
+                /* finish 'luaD_precall' */
+                luaD_poscall (L, L.top - n);
+            }
+
+
+            /*
+            ** Try to find a suspended protected call (a "recover point") for the
+            ** given thread.
+            */
+            public static CallInfo findpcall (lua_State L) {
+                for (CallInfo ci = L.ci; ci != null; ci = ci.previous) {
+                    if ((ci.callstatus & CIST_YPCALL) != 0)
+                        return ci;
+                }
+                return null;
+            }
+
+
+            /*
             ** Execute a protected parser.
             */
             public class SParser {  /* data to 'f_parser' */
@@ -169,6 +189,28 @@ namespace cclua {
 
         public static int savestack (lua_State L, int p) { return p; }
         public static int restorestack (lua_State L, int n) { return n; }
+
+
+        public static bool errorstatus (int status) { return status > cc.LUA_YIELD; }
+
+
+        public static void seterrorobj (lua_State L, int errcode, int oldtop) {
+            switch (errcode) {
+                case cc.LUA_ERRMEM: {  /* memory error? */
+                    setsvalue2s (L, L.stack[oldtop], G (L).memerrmsg);  /* reuse preregistered msg. */
+                    break;
+                }
+                case cc.LUA_ERRERR: {
+                    setsvalue2s (L, L.stack[oldtop], luaS_newliteral (L, "error in error handling"));
+                    break;
+                }
+                default: {
+                    setobjs2s (L, L.stack[oldtop], L.stack[L.top - 1]);  /* error message on current top */
+                    break;
+                }
+            }
+            L.top = oldtop + 1;
+        }
 			
 			
 		/* type of protected functions, to be ran by 'runprotected' */
@@ -200,10 +242,10 @@ namespace cclua {
 				}
 				else {  /* no handler at all; abort */
 					if (g.panic != null) {  /* panic function? */
-						ldo.seterrorobj (L, errcode, L.top);  /* assume EXTRA_STACK */
+						seterrorobj (L, errcode, L.top);  /* assume EXTRA_STACK */
 						if (L.ci.top < L.top)
 							L.ci.top = L.top;  /* pushing msg. can break this invariant */
-						lua_unlock (L);
+                        cc.lua_unlock (L);
 						g.panic (L);  /* call panic function (last chance to jump out) */
 					}
 					ldo.abort ();
@@ -289,9 +331,9 @@ namespace cclua {
                 lua_assert (ci.top <= L.stack_last);
                 L.allowhook = 0;  /* cannot call hooks inside a hook */
                 ci.callstatus |= CIST_HOOKED;
-                lua_unlock (L);
+                cc.lua_unlock (L);
                 hook (L, ar);
-                lua_lock (L) ;
+                cc.lua_lock (L);
                 lua_assert (L.allowhook == 0);
                 L.allowhook = 1;
                 ci.top = restorestack (L, ci_top);
@@ -323,9 +365,9 @@ namespace cclua {
                 luaC_checkGC (L);  /* stack grow uses memory */
                 if ((L.hookmask & cc.LUA_MASKCALL) != 0)
                     luaD_hook (L, cc.LUA_HOOKCALL, -1);
-                lua_unlock (L);
+                cc.lua_unlock (L);
                 n = f (L);  /* do the actual call */
-                lua_lock (L);
+                cc.lua_lock (L);
                 api_checknelems (L, n);
                 luaD_poscall (L, L.top - n);
                 return 1;
@@ -414,6 +456,105 @@ namespace cclua {
         }
 
 
+        /*
+        ** Executes "full continuation" (everything in the stack) of a
+        ** previously interrupted coroutine until the stack is empty (or another
+        ** interruption long-jumps out of the loop). If the coroutine is
+        ** recovering from an error, 'ud' points to the error status, which must
+        ** be passed to the first continuation function (otherwise the default
+        ** status is LUA_YIELD).
+        */
+        public static void unroll (lua_State L, object ud) {
+            if (ud != null)  /* error status? */
+                ldo.finishCcall (L, (int)ud);  /* finish 'lua_pcallk' callee */
+            while (L.ci != L.base_ci) {  /* something in the stack */
+                if (isLua (L.ci))  /* C function? */
+                    ldo.finishCcall (L, cc.LUA_YIELD);  /* complete its execution */
+                else {  /* Lua function */
+                    luaV_finishOp (L);  /* finish interrupted instruction */
+                    luaV_execute (L);  /* execute down to higher C 'boundary' */
+                }
+            }
+        }
+
+
+        /*
+        ** Recovers from an error in a coroutine. Finds a recover point (if
+        ** there is one) and completes the execution of the interrupted
+        ** 'luaD_pcall'. If there is no recover point, returns zero.
+        */
+        public static bool recover (lua_State L, int status) {
+            CallInfo ci = ldo.findpcall (L);
+            if (ci == null) return false;  /* no recovery point */
+            /* "finish" luaD_pcall */
+            int oldtop = restorestack (L, (int)ci.extra);
+            luaF_close (L, oldtop);
+            seterrorobj (L, status, oldtop);
+            L.ci = ci;
+            L.allowhook = (byte)getoah (ci.callstatus);  /* restore original 'allowhook' */
+            L.nny = 0;  /* should be zero to be yieldable */
+            luaD_shrinkstack (L);
+            L.errfunc = ci.u.c.old_errfunc;
+            return true;  /* continue running the coroutine */
+        }
+
+
+        /*
+        ** signal an error in the call to 'resume', not in the execution of the
+        ** coroutine itself. (Such errors should not be handled by any coroutine
+        ** error handler and should not kill the coroutine.)
+        */
+        public static void resume_error (lua_State L, string msg, int firstArg) {
+            L.top = firstArg;  /* remove args from the stack */
+            setsvalue2s (L, L.top, luaS_new (L, msg));  /* push error message */
+            api_incr_top (L);
+            luaD_throw (L, -1);  /* jump back to 'lua_resume' */
+        }
+
+
+        /*
+        ** Do the work for 'lua_resume' in protected mode. Most of the work
+        ** depends on the status of the coroutine: initial state, suspended
+        ** inside a hook, or regularly suspended (optionally with a continuation
+        ** function), plus erroneous cases: non-suspended coroutine or dead
+        ** coroutine.
+        */
+        public static void resume (lua_State L, object ud) {
+            ushort nCcalls = L.nCcalls;
+            int firstArg = (int)ud;
+            CallInfo ci = L.ci;
+            if (nCcalls >= LUAI_MAXCCALLS)
+                resume_error (L, "C stack overflow", firstArg);
+            if (L.status == cc.LUA_OK) {  /* may be starting a coroutine */
+                if (ci != L.base_ci)  /* not in base level? */
+                    resume_error (L, "cannot resume non-suspended coroutine", firstArg);
+                /* coroutine is in base level; start running it */
+                if (luaD_precall (L, firstArg - 1, cc.LUA_MULTRET) == 0)  /* Lua function? */
+                    luaV_execute (L);  /* call it */
+            }
+            else if (L.status != cc.LUA_YIELD)
+                resume_error (L, "cannot resume dead coroutine", firstArg);
+            else {  /* resuming from previous yield */
+                L.status = cc.LUA_OK;  /* mark that it is running (again) */
+                ci.func = restorestack (L, (int)ci.extra);
+                if (isLua (ci))  /* yielded inside a hook? */
+                    luaV_execute (L);  /* just continue running Lua code */
+                else {  /* 'common' yield */
+                    if (ci.u.c.k != null) {  /* does it have a continuation function? */
+                        cc.lua_unlock (L);
+                        int n = ci.u.c.k (L, cc.LUA_YIELD, ci.u.c.ctx);  /* call continuation */
+                        cc.lua_lock (L);
+                        api_checknelems (L, n);
+                        firstArg = L.top - n;  /* yield results come from continuation */
+                    }
+                    luaD_poscall (L, firstArg);  /* finish 'luaD_precall' */
+                }
+                unroll (L, null);  /* run continuation */
+            }
+            lua_assert (nCcalls == L.nCcalls);
+        }
+
+
         public static int luaD_pcall (lua_State L, Pfunc func, object u, int old_top, int ef) {
             CallInfo old_ci = L.ci;
             byte old_allowhooks = L.allowhook;
@@ -424,7 +565,7 @@ namespace cclua {
             if (status != cc.LUA_OK) {  /* an error occurred? */
                 int oldtop = restorestack (L, old_top);
                 luaF_close (L, oldtop);  /* close possible pending closures */
-                ldo.seterrorobj (L, status, oldtop);
+                seterrorobj (L, status, oldtop);
                 L.ci = old_ci;
                 L.allowhook = old_allowhooks;
                 L.nny = old_nny;
@@ -464,10 +605,45 @@ namespace cclua {
 		}
 
 
+        public static int lua_resume (lua_State L, lua_State from, int nargs) {
+            ushort oldnny = L.nny;  /* save "number of non-yieldable" calls */
+            lua_lock (L);
+            imp.luai_userstateresume (L, nargs);
+            L.nCcalls = (ushort)((from != null) ? from.nCcalls + 1 : 1);
+            L.nny = 0;  /* allow yields */
+            imp.api_checknelems (L, (L.status == LUA_OK) ? nargs + 1 : nargs);
+            int status = imp.luaD_rawrunprotected (L, imp.resume, L.top - nargs);
+            if (status == -1)  /* error calling 'lua_resume'? */
+                status = LUA_ERRRUN;
+            else {  /* continue running after recoverable errors */
+                while (imp.errorstatus (status) && imp.recover (L, status)) {
+                    /* unroll continuation */
+                    status = imp.luaD_rawrunprotected (L, imp.unroll, status);
+                }
+                if (imp.errorstatus (status)) {  /* unrecoverable error? */
+                    L.status = (byte)status;  /* mark thread as 'dead' */
+                    imp.seterrorobj (L, status, L.top);  /* push error message */
+                    L.ci.top = L.top;
+                }
+                else lua_assert (status == L.status);  /* normal end or yield */
+            }
+            L.nny = oldnny;  /* restore 'nny' */
+            L.nCcalls--;
+            lua_assert (L.nCcalls == ((from != null) ? from.nCcalls : 0));
+            lua_unlock (L);
+            return status;
+        }
+
+
+        public static int lua_isyieldable (lua_State L) {
+            return ((L.nny == 0) ? 1 : 0);
+        }
+
+
         public static int lua_yieldk (lua_State L, int nresults, long ctx, lua_KFunction k) {
             CallInfo ci = L.ci;
             imp.luai_userstateyield (L, nresults);
-            imp.lua_lock (L);
+            lua_lock (L);
             imp.api_checknelems (L, nresults);
             if (L.nny > 0) {
                 if (L != imp.G (L).mainthread)
@@ -486,7 +662,7 @@ namespace cclua {
                 imp.luaD_throw (L, LUA_YIELD);
             }
             imp.lua_assert ((ci.callstatus & imp.CIST_HOOKED) != 0);  /* must be inside a hook */
-            imp.lua_unlock (L);
+            lua_unlock (L);
             return 0;  /* return to 'luaD_hook' */
         }
 	}

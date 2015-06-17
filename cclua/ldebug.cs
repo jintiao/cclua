@@ -95,7 +95,7 @@ namespace cclua {
                 ar.lastlinedefined = p.lastlinedefined;
                 ar.what = ar.linedefined == 0 ? "main" : "Lua";
             }
-            luaO_chunkid (ref ar.short_src, ar.source, LUA_IDSIZE);
+            luaO_chunkid (ref ar.short_src, ar.source, cc.LUA_IDSIZE);
         }
 
 
@@ -541,7 +541,7 @@ namespace cclua {
 		public static int lua_getstack (lua_State L, int level, lua_Debug ar) {
 			int status = 0;
 			if (level < 0) return 0;  /* invalid (negative) level */
-			imp.lua_lock (L);
+			lua_lock (L);
 			CallInfo ci;
 			for (ci = L.ci; level > 0 && ci != L.base_ci; ci = ci.previous)
 				level--;
@@ -550,13 +550,13 @@ namespace cclua {
 				ar.i_ci = ci;
 			}
 			else status = 0;  /* no such level */
-			imp.lua_unlock (L);
+			lua_unlock (L);
 			return status;
 		}
 
 
 		public static string lua_getlocal (lua_State L, lua_Debug ar, int n) {
-			imp.lua_lock (L);
+			lua_lock (L);
 			string name = null;
             if (ar == null) {  /* information about non-active function? */
                 if (imp.isLfunction (L, L.top - 1) == false)  /* not a Lua function? */
@@ -572,7 +572,7 @@ namespace cclua {
 					imp.api_incr_top (L);
 				}
 			}
-			imp.lua_unlock (L);
+			lua_unlock (L);
 			return name;
 		}
 
@@ -580,18 +580,18 @@ namespace cclua {
 		public static string lua_setlocal (lua_State L, lua_Debug ar, int n) {
             int pos = 0;  /* to avoid warnings */
 			string name = imp.findlocal (L, ar.i_ci, n, ref pos);
-			imp.lua_lock (L);
+			lua_lock (L);
 			if (name != null) {
 				imp.setobj2s (L, pos, L.top - 1);
                 L.top--;  /* pop value */
 			}
-			imp.lua_unlock (L);
+			lua_unlock (L);
 			return name;
 		}
 
 
         public static int lua_getinfo (lua_State L, string what, lua_Debug ar) {
-            imp.lua_lock (L);
+            lua_lock (L);
             CallInfo ci;
             int func;
             int i = 0;
@@ -611,7 +611,7 @@ namespace cclua {
             int status = imp.auxgetinfo (L, what, i, ar, cl, ci);
             if (what.IndexOf ('L') >= 0)
                 imp.collectvalidlines (L, cl);
-            imp.lua_unlock (L);
+            lua_unlock (L);
             return status;
         }
 

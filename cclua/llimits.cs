@@ -52,28 +52,15 @@ namespace cclua {
         /* minimum size for the string table (must be power of 2) */
         public const int MINSTRTABSIZE = 64;  /* minimum size for "predefined" strings */
 
-
-        /* minimum size for string buffer */
-        public const int LUA_MINBUFFER = 32;
-
-
-        public static void lua_lock (lua_State L) { }
-
-        public static void lua_unlock (lua_State L) { }
-
         public static void api_check (bool e, object msg) { }
 
-        public static void lua_assert (object x) { }
-
 		public static T check_exp<T> (bool c, object e) { lua_assert (c); return (T)e; }
-
-		public static void lua_longassert (bool c) { if (c == false) lua_assert (0); }
 
 		public static void luai_userstateopen (lua_State L) { }
 
         public static void luai_userstateclose (lua_State L) { }
 
-        public static void luai_userstatethread (lua_State L) { }
+        public static void luai_userstatethread (lua_State L, lua_State L1) { }
 
         public static void luai_userstatefree (lua_State L, lua_State L1) { }
 
@@ -84,5 +71,22 @@ namespace cclua {
         public static void condmovestack (lua_State L) { }
 
 		public static void condchangemem (lua_State L) { condmovestack (L); }
+    }
+
+
+    public static partial class lua530 {
+
+
+        /* minimum size for string buffer */
+        public const int LUA_MINBUFFER = 32;
+
+
+        public static void lua_lock (lua_State L) { }
+
+        public static void lua_unlock (lua_State L) { }
+
+        public static void lua_assert (object x) { }
+
+        public static void lua_longassert (bool c) { if (c == false) lua_assert (0); }
     }
 }

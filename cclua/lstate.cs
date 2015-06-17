@@ -10,6 +10,7 @@ using CallInfo = cclua.imp.CallInfo;
 using TValue = cclua.imp.TValue;
 using UpVal = cclua.imp.UpVal;
 using LG = cclua.imp.LG;
+using LX = cclua.imp.LX;
 
 namespace cclua {
 
@@ -53,31 +54,6 @@ namespace cclua {
                 p += bytes.Length;
             }
 
-            public static void stack_init (lua_State L1, lua_State L) {
-                L1.stack = luaM_fullvector<TValue> (L, BASIC_STACK_SIZE);
-                L1.stacksize = BASIC_STACK_SIZE;
-                for (int i = 0; i < BASIC_STACK_SIZE; i++)
-                    setnilvalue (L1.stack[i]);  /* erase new stack */
-                L1.top = 0;
-                L1.stack_last = L1.stacksize - EXTRA_STACK;
-                /* initialize first ci */
-                CallInfo ci = L1.base_ci;
-                ci.next = null;
-                ci.previous = null;
-                ci.callstatus = 0;
-                ci.func = L1.top;
-                setnilvalue (L1.stack[L1.top++]);  /* 'function' entry for this 'ci' */
-                ci.top = L1.top + cc.LUA_MINSTACK;
-                L1.ci = ci;
-            }
-
-
-			public static void freestack (lua_State L) {
-				if (L.stack == null)
-					return;  /* stack not completely built yet */
-				L.ci = L.base_ci;  /* free the entire 'ci' list */
-				luaE_freeCI (L);
-			}
 
             /*
             ** Create registry table and its predefined values
@@ -237,7 +213,7 @@ namespace cclua {
             public lua_State l;
 
             public LX () {
-                extra_ = luaM_emptyvector<byte> (null, LUA_EXTRASPACE);
+                extra_ = luaM_emptyvector<byte> (null, cc.LUA_EXTRASPACE);
                 l = luaM_newobject<lua_State> (null);
             }
         }
@@ -300,6 +276,33 @@ namespace cclua {
         }
 
 
+        public static void stack_init (lua_State L1, lua_State L) {
+            L1.stack = luaM_fullvector<TValue> (L, lstate.BASIC_STACK_SIZE);
+            L1.stacksize = lstate.BASIC_STACK_SIZE;
+            for (int i = 0; i < lstate.BASIC_STACK_SIZE; i++)
+                setnilvalue (L1.stack[i]);  /* erase new stack */
+            L1.top = 0;
+            L1.stack_last = L1.stacksize - EXTRA_STACK;
+            /* initialize first ci */
+            CallInfo ci = L1.base_ci;
+            ci.next = null;
+            ci.previous = null;
+            ci.callstatus = 0;
+            ci.func = L1.top;
+            setnilvalue (L1.stack[L1.top++]);  /* 'function' entry for this 'ci' */
+            ci.top = L1.top + cc.LUA_MINSTACK;
+            L1.ci = ci;
+        }
+
+
+        public static void freestack (lua_State L) {
+            if (L.stack == null)
+                return;  /* stack not completely built yet */
+            L.ci = L.base_ci;  /* free the entire 'ci' list */
+            luaE_freeCI (L);
+        }
+
+
 		/*
 		** set GCdebt to a new value keeping the value (totalbytes + GCdebt)
 		** invariant
@@ -358,7 +361,7 @@ namespace cclua {
         */
         public static void f_luaopen (lua_State L, object ud) {
             global_State g = G (L);
-			lstate.stack_init (L, L);  /* init stack */
+			stack_init (L, L);  /* init stack */
             lstate.init_registry (L, g);
 			luaS_resize (L, MINSTRTABSIZE);  /* initial size of string table */
 			luaT_init (L);
@@ -398,7 +401,7 @@ namespace cclua {
 				luai_userstateclose (L);
 			luaM_freearray (L, g.strt.hash);
 			luaZ_freebuffer (L, g.buff);
-			lstate.freestack (L);
+			freestack (L);
 			//lua_assert (gettotalbytes (g) == sizeof (LG));
 			luaM_free (L, fromstate (L));
 		}
@@ -409,10 +412,11 @@ namespace cclua {
             luaF_close (L1, 0);  /* close all upvalues for this thread */
             lua_assert (L1.openupval == null);
             luai_userstatefree (L, L1);
-            lstate.freestack (L1);
+            freestack (L1);
             luaM_free (L, l);
         }
     }
+
 
     public static partial class lua530 {
 
@@ -446,6 +450,34 @@ namespace cclua {
             public lua_State () {
 				base_ci = imp.luaM_newobject<CallInfo> (null);
             }
+        }
+
+
+        public static lua_State lua_newthread (lua_State L) {
+            global_State g = imp.G (L);
+            lua_lock (L);
+            imp.luaC_checkGC (L);
+            /* create new thread */
+            lua_State L1 = imp.luaM_newobject<LX> (L).l;
+            L1.marked = imp.luaC_white (g);
+            L1.tt = cc.LUA_TTHREAD;
+            /* link it on list 'allgc' */
+            L1.next = g.allgc;
+            g.allgc = L1;
+            /* anchor it on L stack */
+            imp.setthvalue (L, L.top, L1);
+            imp.api_incr_top (L);
+            imp.preinit_thread (L1, g);
+            L1.hookmask = L.hookmask;
+            L1.basehookcount = L.basehookcount;
+            L1.hook = L.hook;
+            imp.resethookcount (L1);
+            /* initialize L1 extra space */
+            imp.memcpy (L1.lg.l.extra_, 0, L.lg.l.extra_, LUA_EXTRASPACE);
+            imp.luai_userstatethread (L, L1);
+            imp.stack_init (L1, L);
+            lua_unlock (L);
+            return L1;
         }
 
 
@@ -503,7 +535,7 @@ namespace cclua {
 
 		public static void lua_close (lua_State L) {
 			L = imp.G (L).mainthread;  /* only the main thread can be closed */
-			imp.lua_lock (L);
+			lua_lock (L);
 			imp.close_state (L);
 		}
     }

@@ -252,7 +252,7 @@ namespace cclua {
             }
             /* random integer in the interval [low, up] */
             cc.luaL_argcheck (L, low <= up, 1, "interval is empty");
-            cc.luaL_argcheck (L, low >= 0 || up <= LUA_MAXINTEGER + low, 1, "interval too large");
+            cc.luaL_argcheck (L, low >= 0 || up <= cc.LUA_MAXINTEGER + low, 1, "interval too large");
             r *= (up - low) + 1.0;
             cc.lua_pushinteger (L, (long)r + low);
             return 1;
@@ -331,9 +331,9 @@ namespace cclua {
             cc.lua_setfield (L, -2, "pi");
             cc.lua_pushnumber (L, imp.HUGE_VAL);
             cc.lua_setfield (L, -2, "huge");
-            cc.lua_pushinteger (L, imp.LUA_MAXINTEGER);
+            cc.lua_pushinteger (L, cc.LUA_MAXINTEGER);
             cc.lua_setfield (L, -2, "maxinteger");
-            cc.lua_pushinteger (L, imp.LUA_MININTEGER);
+            cc.lua_pushinteger (L, cc.LUA_MININTEGER);
             cc.lua_setfield (L, -2, "mininteger");
 			return 1;
 		}
